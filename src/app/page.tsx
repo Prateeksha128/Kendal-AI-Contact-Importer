@@ -1,5 +1,13 @@
-import { redirect } from "next/navigation";
+"use client";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function Home() {
-  redirect("/dashboard");
+  const router = useRouter();
+  useEffect(() => {
+    router.push("/dashboard");
+  }, []);
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-center p-24"></main>
+  );
 }

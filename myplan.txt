@@ -1,0 +1,99 @@
+## **1. Assumptions**
+
+- The import will support **both CSV and Excel (.xlsx)** files to upload contacts.
+- **Firebase Auth** will handle user login and authentication.
+- **Firestore** will store all the data: contacts, contact fields, and users.
+- Users (agents) will be **added manually through the UI** before importing contacts.
+- After import, the summary of contacts (created, merged, skipped) will be **shown to the user** and **saved in Firestore** for reference(with the details of logged in user).
+
+---
+
+## **2. Approach / How I Plan to Do It**
+
+![image.png](attachment:f390ab25-5405-4a6e-acee-8e6ab2ba218d:image.png)
+
+### **File Upload & Parsing**
+
+- Users can **drag & drop** their files or browse using **react-dropzone** or Ant Design Upload.
+- CSV files will be parsed using **papaparse**, and Excel files using **xlsx**.
+- Before parsing, the system checks the file type to ensure it’s either CSV or Excel.
+
+### **Smart Field Mapping**
+
+- I’ll use **AI Modal** to automatically suggest which file column matches which system field.
+- **Regex/pattern detection** will be used to detect phone numbers, emails, and dates.
+- Users can **manually override** any AI suggestions if needed before final import, giving them full control.
+- Show clear progress/fallback UI while processing.
+
+### **Agent Mapping**
+
+- If the uploaded file contains agent emails, the system will match them to `/users` and assign the correct `agentUid`.
+- If an email doesn’t exist in users, it will be ignored or the user will get a warning.
+
+### **Deduplication & Merging**
+
+- Contacts are considered duplicates if **phone OR email matches**.
+- When merging, only **non-blank fields** will overwrite existing data to avoid losing information.
+
+### **Import Summary**
+
+- After import, the user sees a summary of **contacts created, merged, and skipped**.
+
+---
+
+## **3. Step-by-Step Milestones**
+
+1. **Setup**
+    - Start a Next.js project with TypeScript.
+    - Connect Firebase Auth and Firestore.
+2. **User Management**
+    - Build a simple UI to add or edit users (`/users`).
+    - These users will be used for agent mapping.
+3. **Contact Fields Management**
+    - Create a UI for `/contactFields` to add, edit, or delete fields.
+    - **Core fields** (`firstName`, `lastName`, `phone`, `email`, `agentUid`, `createdOn`) **cannot be deleted**.
+4. **File Upload & Parsing**
+    - Implement drag & drop / file input.
+    - Parse CSV and Excel files into JSON objects.
+5. **Smart Field Mapping**
+    - Use **AI Modal + regex patterns** to suggest mappings.
+    - Allow users to **manually adjust mappings** if needed.
+6. **Deduplication & Merging**
+    - Detect duplicates by **phone OR email**.
+    - Merge only **non-blank fields**.
+7. **Batch Write to Firestore**
+    - Save contacts in **chunks** for performance and safety.
+8. **Import Summary**
+    - Display summary (created, merged, skipped).
+    - Store summary in Firestore.
+9. **Contacts Table**
+    - Show all contacts with agent names and custom fields.
+    - Add **search and filter** by name, phone, email, or agent.
+    - Ensure the table is **responsive** for smaller screens.
+10. **Import Shortcut**
+    - Users can click **“Import Contacts”** to start the upload + mapping flow from the contacts page.
+
+---
+
+## **4. Tools / Libraries I’ll Use**
+
+| Purpose | Tool |
+| --- | --- |
+| Frontend Framework | **Next.js (TypeScript)** |
+| Styling | **Tailwind CSS**, optional Ant Design components |
+| Upload | `react-dropzone`  |
+| CSV/Excel Parsing | `papaparse`, `xlsx` |
+| Database & Auth | **Firebase Firestore + Firebase Auth** |
+| Smart Mapping | Simple regex +  AI Modal |
+
+---
+
+### **Summary of Thought Process**
+
+I want this feature to be:
+
+- **Easy for users** — simple UI for login, contacts table, and import.
+- **Smart** — automatically suggest mappings using AI, but allow manual overrides.
+- **Responsive** — good progress and fallback UI where needed.
+- **Reliable** — deduplicate contacts safely and save in Firestore efficiently.
+- **Flexible** — support custom fields,  and manual user management.

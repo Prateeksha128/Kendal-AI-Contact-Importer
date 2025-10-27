@@ -1,0 +1,160 @@
+# 🔧 Full-Stack Assignment: Contact Importer with Smart Field Mapping
+
+## **Core Objective**
+
+Build a contact import system with **smart field mapping** that auto-suggests which columns from an uploaded file should map to system fields. The ability to view/manage contacts, users, and custom fields is important **to support the system**, but the core evaluation will focus on the import and mapping flow.
+
+---
+
+## 🎨 Designs
+
+Here’s the link to the designs for the import flow:  
+
+https://www.figma.com/design/vz2gPesiMysYykgXk4buvd/Import-and-Field-Mapping?node-id=1-548&t=mkB7SRMyt5A8Woir-1
+
+Please aim to implement the flow as closely as possible to the designs. You’re welcome to adapt or make improvements if necessary, as long as the core intent is preserved.
+
+Make sure to include loading animations or progress indicators during file uploads and processing, as suggested in the design — this helps ensure a smooth and responsive user experience.
+
+You won't be graded on pixel-perfect design — but attention to detail and usability are key.
+
+---
+
+## 🧱 Tech Requirements
+
+- **Framework**: Must use **Next.js** (with React & TypeScript).
+- **Backend/Data**: Must use **Firebase** (Firestore is required; Firebase Auth and Functions optional).
+- **Data Model**
+    
+    ```
+    /company
+      /contacts
+        - firstName 
+        - lastName 
+        - phone 
+        - email
+        - agentUid  // assigned user’s uid
+        - createdOn
+        - ...custom fields
+      /contactFields
+        - id (doc id)
+        - label (string)
+        - type (text | number | phone | email | datetime)
+        - core (boolean)
+      /users
+        - uid (string)
+        - name (string)
+        - email (string)
+    
+    ```
+    
+- **Core fields**: `firstName`, `lastName`, `phone`, `email`, `agentUid`, `createdOn`.
+These cannot be deleted. Custom fields are editable and managed via `/contactFields`.
+
+---
+
+## ✅ Required Features
+
+### 1. Smart Import & Mapping (Core Evaluation Area)
+
+- Upload **CSV and/or Excel (.xlsx)** file.
+- Auto-suggest field mapping from file columns to system fields based on:
+    - header similarity (e.g., "mobile number" → phone)
+    - data patterns (e.g., email regex)
+- Allow **manual override** of mappings before final import.
+- Detect agent emails from the file and map them to their UID in `/users` to populate `agentUid`.
+    - Prevent mapping to users not present in `/users`.
+- **Deduplication**: If a contact with the same phone **or** email exists, merge new info (skip blank overwrites).
+- After import, show a **summary**:
+    - Contacts created
+    - Contacts merged
+    - Skipped (if applicable)
+- Show **loading animations/progress** during upload/processing.
+
+### 2. Manage Custom Fields
+
+- View/add/edit contact fields in `/contactFields`.
+- Enforce core fields (`core: true`) as non-deletable.
+
+### 3. Manage Users
+
+- Add users (allow us to set the name and  email) into `/users` for testing agent mapping.
+
+### 4. View Contacts
+
+- Table view of contacts.
+- Show name of assigned agent (resolve from `agentUid`).
+- Basic filter/search for phone, email, or agent.
+
+---
+
+## 🚀 Submission Process
+
+### Phase 1 — Planning (submit before coding)
+
+Send us a **short plan** with:
+
+- Assumptions
+- Approach for field mapping, merging, batching
+- Steps or milestones you’ll follow
+- Any tools or libraries you intend to use
+
+> Bullet points are fine — it just needs to show clear thinking and realistic planning.
+> 
+
+---
+
+### Final Submission
+
+Once completed, send:
+
+- ✅ **Link to your codebase**
+- ✅ **Live link (preferred)** or a short recorded walkthrough
+- ✅ **Final plan with annotations** (what changed or was skipped)
+- ✅ **Documentation** covering:
+    - How to run
+    - Overview of how things were implemented
+    - Any trade-offs or limitations
+
+---
+
+## 🧪 What You'll Be Evaluated On
+
+### Frontend
+
+- Design fidelity for import flow (match the provided UI)
+- User-friendliness and clarity
+- Good UX around mapping and import summary
+
+### Backend / Data
+
+- Clear, scalable Firestore structure
+- Clean import logic with merge handling
+- Good handling of field types and custom fields
+- Performance: chunked writes, async handling for large files
+- Well-structured and readable code
+
+### Planning & Communication
+
+- Is the plan clear, complete, and realistic?
+- Is the code straightforward to follow and commented?
+- Are changes well-documented and decisions explained?
+
+### Documentation
+
+- Can someone else understand and run your code easily?
+- Are trade-offs or unfinished parts explained?
+
+---
+
+## 📋 Completion Checklist
+
+- [ ]  Upload and preview file
+- [ ]  Auto-suggest + manual override for mapping
+- [ ]  Agent email mapping → agentUid
+- [ ]  Merge logic on phone/email
+- [ ]  Summary of created, merged, skipped contacts
+- [ ]  ContactFields management with core field protection
+- [ ]  User management
+- [ ]  Contacts table with agent names
+- [ ]  Loading states and progress bars during import
