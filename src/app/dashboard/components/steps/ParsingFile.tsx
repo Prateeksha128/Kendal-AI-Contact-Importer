@@ -1,11 +1,9 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useFileContext } from "@/contexts/FileContext";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 
 export default function ParsingFile() {
-  const { fileData } = useFileContext();
   const [filled, setFilled] = useState(false);
 
   useEffect(() => {
@@ -21,9 +19,7 @@ export default function ParsingFile() {
           AI Column Detection...
         </h3>
         <p className="text-[#68818C] text-[16px] font-normal">
-          {fileData
-            ? `Analyzing ${fileData.headers.length} columns and matching with CRM fields using AI...`
-            : "Detecting and reviewing the structure of your data entries..."}
+          Detecting and reviewing the structure of your data entries...
         </p>
       </div>
 

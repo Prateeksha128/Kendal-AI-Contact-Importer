@@ -1,73 +1,141 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Search } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Search, Download } from "lucide-react";
 import ReactPaginate from "react-paginate";
 import { getDocuments } from "@/lib/firestore";
-import { Contact } from "@/types";
-import { formatDate } from "@/utils/helper";
+import { Contact, User, ContactField } from "@/types";
+import { formatDate, getCoreFields } from "@/utils/helper";
+import LoadingSpinner from "../LoadingSpinner";
+import { auth } from "@/lib/firebase";
 
 export default function ContactsTable() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState<User[]>([]);
+  const [coreFields, setCoreFields] = useState<ContactField[]>([]);
+  const [contactsLoading, setContactsLoading] = useState(true);
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [fieldsLoading, setFieldsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
+  const [isPageChanging, setIsPageChanging] = useState(false);
 
-  // Fetch contacts from Firestore
-  useEffect(() => {
-    const fetchContacts = async () => {
-      try {
-        setLoading(true);
-        const response = await getDocuments<Contact>("contacts", {
-          orderByField: "createdOn",
-          orderDirection: "desc",
-        });
+  const loading = contactsLoading || usersLoading || fieldsLoading;
 
-        if (response.success && response.data) {
-          setContacts(response.data);
-        } else {
-          console.error("Error fetching contacts:", response.error);
-        }
-      } catch (error) {
-        console.error("Error fetching contacts:", error);
-      } finally {
-        setLoading(false);
+  // Fetch functions
+  const fetchContacts = async () => {
+    try {
+      setContactsLoading(true);
+      const response = await getDocuments<Contact>("contacts");
+      if (response.success && response.data) {
+        setContacts(response.data);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching contacts:", error);
+    } finally {
+      setContactsLoading(false);
+    }
+  };
 
+  const fetchUsers = async () => {
+    try {
+      setUsersLoading(true);
+      const response = await getDocuments<User>("users");
+      if (response.success && response.data) {
+        setUsers(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+  const fetchCoreFields = async () => {
+    try {
+      setFieldsLoading(true);
+      const fields = await getCoreFields();
+
+      // Filter out agentUid and enforce order
+      const filtered = fields.filter((field) => field.label !== "agentUid");
+
+      // Define preferred order
+      const preferredOrder = ["firstName", "lastName", "email", "phone"];
+
+      // Sort according to preferred order (rest fields stay at end)
+      const orderedFields = filtered.sort((a, b) => {
+        const indexA = preferredOrder.indexOf(a.label);
+        const indexB = preferredOrder.indexOf(b.label);
+        if (indexA === -1 && indexB === -1) return 0; // both not in order list
+        if (indexA === -1) return 1; // a comes after ordered ones
+        if (indexB === -1) return -1; // b comes after ordered ones
+        return indexA - indexB;
+      });
+
+      setCoreFields(orderedFields);
+    } catch (error) {
+      console.error("Error fetching core fields:", error);
+    } finally {
+      setFieldsLoading(false);
+    }
+  };
+
+  // Fetch data on mount
+  useEffect(() => {
     fetchContacts();
+    fetchUsers();
+    fetchCoreFields();
   }, []);
 
-  // Filter contacts based on search term
+  // Map uid → userEmail for displaying agent
+  const uidToEmail = useMemo(() => {
+    const map: Record<string, string> = {};
+    users.forEach((user) => {
+      if (user.uid && user.email) map[user.uid] = user.email;
+    });
+    return map;
+  }, [users]);
+
+  // Filter by search
   const filteredContacts = useMemo(() => {
     if (!searchTerm) return contacts;
-
     const term = searchTerm.toLowerCase();
     return contacts.filter(
-      (contact) =>
-        contact.firstName?.toLowerCase().includes(term) ||
-        contact.lastName?.toLowerCase().includes(term) ||
-        contact.phone?.toLowerCase().includes(term) ||
-        contact.email?.toLowerCase().includes(term) ||
-        contact.agentUid?.toLowerCase().includes(term)
+      (c) =>
+        c.firstName?.toLowerCase().includes(term) ||
+        c.lastName?.toLowerCase().includes(term) ||
+        c.phone?.toLowerCase().includes(term) ||
+        c.email?.toLowerCase().includes(term) ||
+        uidToEmail[c.agentUid || ""]?.toLowerCase().includes(term)
     );
-  }, [contacts, searchTerm]);
+  }, [contacts, searchTerm, uidToEmail]);
 
-  // Pagination logic
+  // Pagination
   const totalPages = Math.ceil(filteredContacts.length / pageSize);
   const startIndex = currentPage * pageSize;
   const endIndex = startIndex + pageSize;
   const currentContacts = filteredContacts.slice(startIndex, endIndex);
 
-  // Reset to first page when search term changes
-  useEffect(() => {
-    setCurrentPage(0);
-  }, [searchTerm]);
-
-  // Handle page change
   const handlePageChange = ({ selected }: { selected: number }) => {
     setCurrentPage(selected);
+    setIsPageChanging(true);
+    // Simulate data loading time
+    setTimeout(() => setIsPageChanging(false), 100);
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(0); // Reset to first page when searching
+  };
+
+  const handleImportClick = () => {
+    const params = new URLSearchParams(searchParams);
+    params.set("tab", "import");
+    router.push(`?${params.toString()}`);
   };
 
   if (loading) {
@@ -88,78 +156,104 @@ export default function ContactsTable() {
   return (
     <div className="p-4 sm:p-6">
       <div className="mb-6">
-        <h2 className="text-lg font-medium text-gray-900 mb-4">Contacts</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-medium text-gray-900">Contacts</h2>
+          <button
+            onClick={handleImportClick}
+            className="flex items-center gap-2 cursor-pointer bg-[#0E4259] text-white px-4 py-2 rounded-lg hover:bg-[#155A75] transition-colors duration-200"
+          >
+            <Download className="h-4 w-4" />
+            Import
+          </button>
+        </div>
 
-        {/* Search Input */}
+        {/* Search */}
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
             type="text"
             placeholder="Search contacts..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleSearchChange}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
       </div>
 
-      {/* Table */}
       {filteredContacts.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">
-            {searchTerm
-              ? "No contacts found matching your search."
-              : "No contacts found."}
-          </p>
+        <div className="text-center py-12 text-gray-500">
+          {searchTerm
+            ? "No contacts found matching your search."
+            : "No contacts found."}
         </div>
       ) : (
         <>
           <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border border-gray-200 rounded-lg">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Phone
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Email
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Agent
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Created
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {currentContacts.map((contact) => (
-                  <tr key={contact.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm text-gray-900">
-                      {contact.firstName} {contact.lastName}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">
-                      {contact.phone || "N/A"}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">
-                      {contact.email || "N/A"}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">
-                      {contact.agentUid || "N/A"}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">
-                      {formatDate(contact.createdOn)}
-                    </td>
+            <div className="relative">
+              {isPageChanging && (
+                <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <LoadingSpinner size="md" color="blue" />
+                    <span className="text-sm text-gray-600">Loading...</span>
+                  </div>
+                </div>
+              )}
+              <table className="min-w-full bg-white border border-gray-200 rounded-lg transition-opacity duration-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    {coreFields.map((field) => (
+                      <th
+                        key={field.id}
+                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        {field.label}
+                      </th>
+                    ))}
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Agent
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Created
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Last Updated By
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {currentContacts.map((contact) => (
+                    <tr
+                      key={contact.id}
+                      className="hover:bg-gray-50 transition-colors duration-150"
+                    >
+                      {coreFields.map((field) => (
+                        <td
+                          key={field.id}
+                          className="px-4 py-3 text-sm text-gray-900"
+                        >
+                          {String(
+                            (contact as Record<string, unknown>)[field.label] ||
+                              "—"
+                          )}
+                        </td>
+                      ))}
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        {uidToEmail[contact.agentUid || ""] || "-----"}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        {formatDate(contact.createdOn)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        {(contact.lastUpdatedBy as string) || "-----"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          {/* Pagination */}
+          {/* Pagination footer */}
           <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-700">Show</span>
@@ -187,7 +281,6 @@ export default function ContactsTable() {
             </div>
           </div>
 
-          {/* React Paginate */}
           {totalPages > 1 && (
             <div className="mt-4 flex justify-center">
               <ReactPaginate
@@ -199,8 +292,8 @@ export default function ContactsTable() {
                 previousLabel="Previous"
                 nextLabel="Next"
                 breakLabel="..."
-                containerClassName="flex items-center space-x-1 flex-wrap justify-center"
-                pageClassName="px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50 cursor-pointer"
+                containerClassName="flex  items-center space-x-1 flex-wrap justify-center"
+                pageClassName="px-2 sm:px-3 hover:bg-gray-200  py-2 text-sm border border-gray-300 rounded cursor-pointer"
                 pageLinkClassName="text-gray-700"
                 activeClassName="bg-blue-500 text-white border-blue-500"
                 activeLinkClassName="text-white"

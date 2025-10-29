@@ -3,13 +3,17 @@
 import { useSearchParams } from "next/navigation";
 import Upload from "./tabs/Upload";
 import ContactsTable from "./tabs/ContactsTable";
+import UsersTab from "./tabs/UsersTab";
 
 interface TabContentProps {
   onFileSelect: () => void;
   onCloseModal: () => void;
 }
 
-export default function TabContent({ onFileSelect, onCloseModal }: TabContentProps) {
+export default function TabContent({
+  onFileSelect,
+  onCloseModal,
+}: TabContentProps) {
   const searchParams = useSearchParams();
   const activeTab = searchParams.get("tab") || "contacts";
 
@@ -18,16 +22,11 @@ export default function TabContent({ onFileSelect, onCloseModal }: TabContentPro
       case "contacts":
         return <ContactsTable />;
       case "import":
-        return <Upload onFileSelect={onFileSelect} onCloseModal={onCloseModal} />;
-      case "agents":
         return (
-          <div className="p-4 sm:p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Agents</h2>
-            <p className="text-gray-500">
-              Agents content will be displayed here.
-            </p>
-          </div>
+          <Upload onFileSelect={onFileSelect} onCloseModal={onCloseModal} />
         );
+      case "users":
+        return <UsersTab />;
       default:
         return <ContactsTable />;
     }

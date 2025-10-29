@@ -1,11 +1,9 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useFileContext } from "@/contexts/FileContext";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 
 export default function FinalChecksLoading() {
-  const { fileData } = useFileContext();
   const [filled, setFilled] = useState(false);
 
   useEffect(() => {

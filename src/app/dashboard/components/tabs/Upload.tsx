@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { FileUp } from "lucide-react";
+import { Zap, CheckCircle, WrenchIcon, Download } from "lucide-react";
 import { getSmartColumnPredictions } from "@/utils/helper";
 import { useFileContext } from "@/contexts/FileContext";
 import { useFileParser } from "@/hooks/useFileParser";
@@ -19,7 +19,7 @@ export default function Upload({ onFileSelect, onCloseModal }: UploadProps) {
     handleFile,
   } = useFileParser();
 
-  const { fileData, setFileData } = useFileContext();
+  const { setFileData, setIsParsingLoading } = useFileContext();
 
   const [loadingPredictions, setLoadingPredictions] = useState(false);
   const [predictionError, setPredictionError] = useState<string | null>(null);
@@ -32,6 +32,7 @@ export default function Upload({ onFileSelect, onCloseModal }: UploadProps) {
     onFileSelect(); // ✅ Open modal when file selected
 
     const fetchPredictions = async () => {
+      setIsParsingLoading(true);
       setLoadingPredictions(true);
       setPredictionError(null);
 
@@ -45,7 +46,6 @@ export default function Upload({ onFileSelect, onCloseModal }: UploadProps) {
           data.headers,
           rowsAsArrays
         );
-        console.log("Predicted column mapping:", result);
 
         // ✅ Save everything in context
         setFileData({
@@ -61,6 +61,7 @@ export default function Upload({ onFileSelect, onCloseModal }: UploadProps) {
         onCloseModal(); // ❌ Close modal if prediction fails
       } finally {
         setLoadingPredictions(false);
+        setIsParsingLoading(false);
       }
     };
 
@@ -85,16 +86,30 @@ export default function Upload({ onFileSelect, onCloseModal }: UploadProps) {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h2 className="text-lg font-medium text-gray-900 mb-4">Upload File</h2>
+    <div className="max-w-6xl mx-auto p-6">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <h1 className="text-xl font-medium text-gray-700 mb-2">
+          Upload your CSV or Excel file and let AI automatically map your
+          columns to contact fields
+        </h1>
+      </div>
 
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-        <FileUp className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-        <label htmlFor="file-upload" className="cursor-pointer">
-          <span className="text-sm font-medium text-blue-600 hover:text-blue-500">
-            Click to upload CSV or Excel file
-          </span>
-        </label>
+      {/* Upload Area */}
+      <div className="bg-white rounded-lg border-2 border-dashed border-gray-300 p-12 text-center mb-8">
+        <Download className="mx-auto h-16 w-16 text-gray-400 mb-4" />
+        <p className="text-lg text-gray-700 mb-2">
+          Drop your files here, or{" "}
+          <label
+            htmlFor="file-upload"
+            className="text-blue-600 underline cursor-pointer"
+          >
+            browse
+          </label>
+        </p>
+        <p className="text-sm text-gray-500 mb-6">
+          Supports CSV and Excel files (.csv, .xlsx, .xls)
+        </p>
         <input
           id="file-upload"
           type="file"
@@ -103,12 +118,71 @@ export default function Upload({ onFileSelect, onCloseModal }: UploadProps) {
           className="hidden"
           disabled={fileLoading || loadingPredictions}
         />
-        <p className="text-xs text-gray-500 mt-2">CSV, XLS, XLSX files</p>
+        <button
+          onClick={() => document.getElementById("file-upload")?.click()}
+          disabled={fileLoading || loadingPredictions}
+          className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
+        >
+          {fileLoading || loadingPredictions
+            ? "Processing..."
+            : "Start Import Process"}
+        </button>
       </div>
 
-      {fileError && <p className="mt-4 text-red-600">Error: {fileError}</p>}
-      {predictionError && (
-        <p className="mt-4 text-red-600">Prediction error: {predictionError}</p>
+      {/* Feature Cards */}
+      <div className="grid md:grid-cols-3 gap-6">
+        <div className="bg-white rounded-lg p-6 shadow-sm">
+          <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+            <Zap className="h-6 w-6 text-blue-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">
+            Smart AI Mapping
+          </h3>
+          <p className="text-gray-600 text-sm">
+            Automatically detects and maps your columns to contact fields using
+            intelligent pattern recognition.
+          </p>
+        </div>
+
+        <div className="bg-white rounded-lg p-6 shadow-sm">
+          <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+            <CheckCircle className="h-6 w-6 text-green-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">
+            Duplicate Detection
+          </h3>
+          <p className="text-gray-600 text-sm">
+            Finds and merges duplicate contacts based on phone number or email
+            address.
+          </p>
+        </div>
+
+        <div className="bg-white rounded-lg p-6 shadow-sm">
+          <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+            <WrenchIcon className="h-6 w-6 text-purple-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">
+            Custom Fields
+          </h3>
+          <p className="text-gray-600 text-sm">
+            Support for custom contact fields with different data types and
+            validation.
+          </p>
+        </div>
+      </div>
+
+      {/* Error Messages */}
+      {(fileError || predictionError) && (
+        <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          {fileError && (
+            <p className="text-red-600 text-sm">Error: {fileError}</p>
+          )}
+          {predictionError && (
+            <p className="text-red-600 text-sm">
+              Prediction error: {predictionError}
+            </p>
+          )}
+        </div>
       )}
     </div>
   );

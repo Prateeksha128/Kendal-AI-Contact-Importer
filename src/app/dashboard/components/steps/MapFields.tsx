@@ -1,34 +1,46 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
-import { Link2, Edit2, RotateCcw, AlertCircle } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
+import { Link2, Edit2, AlertCircle } from "lucide-react";
 import { useFileContext } from "@/contexts/FileContext";
-import { CONTACT_FIELDS } from "@/constant"; // ← core field source of truth
-
-const predefinedFields = CONTACT_FIELDS.map((f) => ({
-  label: f.label,
-  value: f.id,
-  core: f.core,
-}));
+import { CONTACT_FIELDS } from "@/constant";
+import ContactFieldDropdown from "./Dropdown";
 
 export default function MapFields() {
   const { fileData } = useFileContext();
   const { predictions = [], rows = [] } = fileData || {};
   const samples = rows.slice(0, 5);
 
+  const predefinedFields = CONTACT_FIELDS.map((f) => ({
+    label: f.label,
+    value: f.id,
+    core: f.core,
+  }));
+
   const [editableIndex, setEditableIndex] = useState<number | null>(null);
   const [mapping, setMapping] = useState(predictions);
 
-  // 🧩 Handle field selection
+  // ✅ Handle dropdown selection
   const handleSelect = (index: number, newField: string) => {
     const updated = [...mapping];
-    updated[index].suggestedHeader = newField;
-    updated[index].isCustom = newField === "custom";
+
+    if (newField === "skip") {
+      // Clear mapping for this field
+      updated[index].suggestedHeader = "";
+      updated[index].isCustom = false;
+    } else if (newField === "custom") {
+      updated[index].suggestedHeader = "custom";
+      updated[index].isCustom = true;
+    } else {
+      updated[index].suggestedHeader = newField;
+      updated[index].isCustom = false;
+    }
+
     setMapping(updated);
     setEditableIndex(null);
   };
 
-  // 🧠 Validation function: check if all core fields are mapped
+  // ✅ Validation for unmapped core fields
   const validateMappedCoreFields = useMemo(() => {
     return () => {
       const coreFields = predefinedFields.filter((f) => f.core);
@@ -47,13 +59,26 @@ export default function MapFields() {
         unmappedFields: unmappedCoreFields,
       };
     };
-  }, [mapping]);
+  }, [mapping, predefinedFields]);
 
-  // 🌐 Expose validator globally so parent (Next/Prev navigation) can access it
   useEffect(() => {
-    (window as any).validateMapFields = validateMappedCoreFields;
+    (
+      window as unknown as {
+        validateMapFields: () => {
+          isValid: boolean;
+          unmappedFields: unknown[];
+        };
+      }
+    ).validateMapFields = validateMappedCoreFields;
     return () => {
-      delete (window as any).validateMapFields;
+      delete (
+        window as unknown as {
+          validateMapFields?: () => {
+            isValid: boolean;
+            unmappedFields: unknown[];
+          };
+        }
+      ).validateMapFields;
     };
   }, [validateMappedCoreFields]);
 
@@ -80,6 +105,15 @@ export default function MapFields() {
             badgeColor = "bg-green-100 text-green-700 border-green-200";
           else if (conf < 30)
             badgeColor = "bg-red-100 text-red-700 border-red-200";
+
+          const currentField = predefinedFields.find(
+            (f) =>
+              f.label?.toLowerCase() === p.suggestedHeader?.toLowerCase() ||
+              ("value" in f &&
+                f.value?.toLowerCase() === p.suggestedHeader?.toLowerCase())
+          );
+
+          const isCoreField = currentField?.core === true;
 
           return (
             <div
@@ -111,9 +145,7 @@ export default function MapFields() {
                       Manual Review Required
                     </div>
                   )}
-                  <div
-                    className={`text-xs px-2 py-1 rounded-md font-medium bg-[#E7F5FB] border border-[#AACCFF] text-[#0959D1]`}
-                  >
+                  <div className="text-xs px-2 py-1 rounded-md font-medium bg-[#E7F5FB] border border-[#AACCFF] text-[#0959D1]">
                     CRM FIELD
                   </div>
                 </div>
@@ -126,7 +158,7 @@ export default function MapFields() {
                     {p.originalHeader}
                   </p>
 
-                  {/* Show up to 5 sample values */}
+                  {/* Sample values */}
                   <div className="flex flex-wrap gap-1 mt-1">
                     {samples.map((row, i) => {
                       const value = String(row[index] || "");
@@ -144,34 +176,23 @@ export default function MapFields() {
                   </div>
                 </div>
 
-                {/* Right side (mapping + edit) */}
+                {/* Right side */}
                 <div className="flex items-center gap-3 mt-3 md:mt-0">
                   <Link2 className="text-[#1970F3]" />
 
                   {editableIndex === index ? (
-                    <select
-                      onChange={(e) => handleSelect(index, e.target.value)}
-                      className="border border-gray-300 rounded-lg text-sm px-2 py-1"
-                      defaultValue={p.suggestedHeader || ""}
-                    >
-                      <option value="" disabled>
-                        Select field
-                      </option>
-                      {predefinedFields.map((f) => (
-                        <option key={f.value} value={f.value}>
-                          {f.label}
-                        </option>
-                      ))}
-                      <option value="custom">Create Custom Field</option>
-                      <option value="skip">Don’t import this field</option>
-                    </select>
+                    <ContactFieldDropdown
+                      value={p.suggestedHeader}
+                      onSelect={(val) => handleSelect(index, val)}
+                      disabledCoreField={isCoreField}
+                    />
                   ) : (
                     <p
                       className={`text-[16px] font-medium ${
                         p.isCustom ? "text-pink-600" : "text-[#0056D2]"
                       }`}
                     >
-                      {p.suggestedHeader}
+                      {p.suggestedHeader || "—"}
                     </p>
                   )}
 
@@ -183,16 +204,6 @@ export default function MapFields() {
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
-
-                  <RotateCcw
-                    className="w-4 h-4 text-gray-400 cursor-pointer"
-                    onClick={() => {
-                      const updated = [...mapping];
-                      updated[index] = predictions[index];
-                      setMapping(updated);
-                      setEditableIndex(null);
-                    }}
-                  />
                 </div>
               </div>
             </div>

@@ -1,16 +1,21 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useState } from "react";
 import { X } from "lucide-react";
 import Image from "next/image";
 import toast from "react-hot-toast";
 import {
-  ParsingFile,
   DetectedFields,
   MapFields,
-  FinalChecksLoading,
+  ParsingFile,
   FinalChecksComplete,
+  FinalChecksLoading,
 } from "./steps";
+import { useFileContext } from "@/contexts/FileContext";
+import { DEFAULT_COMPANY_ID } from "@/lib/firestore";
+import { importContactsBulk } from "@/service/importContacts";
+import { ImportSummary } from "@/types";
+import { useRouter } from "next/navigation";
 
 const steps = [
   { number: 1, title: "Detect Fields", description: "Review data structure" },
@@ -18,70 +23,66 @@ const steps = [
   { number: 3, title: "Final Checks", description: "For Duplicates or Errors" },
 ];
 
-const LOADING_STAGES = [
-  "PARSING_FILE",
-  "DETECTED_FIELDS",
-  "MAP_FIELDS",
-  "FINAL_CHECKS_LOADING",
-  "FINAL_CHECKS_COMPLETE",
-] as const;
-
-type LoadingStage = (typeof LOADING_STAGES)[number];
-
-const STAGE_COMPONENTS = {
-  PARSING_FILE: ParsingFile,
-  DETECTED_FIELDS: DetectedFields,
-  MAP_FIELDS: MapFields,
-  FINAL_CHECKS_LOADING: FinalChecksLoading,
-  FINAL_CHECKS_COMPLETE: FinalChecksComplete,
-} as const;
-
-const STAGE_TO_STEP = {
-  PARSING_FILE: 1,
-  DETECTED_FIELDS: 1,
-  MAP_FIELDS: 2,
-  FINAL_CHECKS_LOADING: 3,
-  FINAL_CHECKS_COMPLETE: 3,
-} as const;
-
 interface ImportModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
 export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
-  const [loadingStage, setLoadingStage] = useState<LoadingStage>(
-    LOADING_STAGES[0]
-  );
+  const [currentStep, setCurrentStep] = useState(1);
+  const [importSummary, setImportSummary] = useState<ImportSummary>({
+    created: 0,
+    merged: 0,
+    skipped: 0,
+  });
+  const router = useRouter();
+  const {
+    fileData,
+    isParsingLoading,
+    isCheckingLoading,
+    setIsCheckingLoading,
+  } = useFileContext();
 
-  const currentIndex = LOADING_STAGES.indexOf(loadingStage);
-  const currentStep = STAGE_TO_STEP[loadingStage];
+  // prepare contacts
+  const prepareContacts = () => {
+    if (!fileData) return [];
 
-  // 🧠 Auto transition (every 2s)
-  useEffect(() => {
-    if (!isOpen) return;
-
-    if (currentIndex === 0 || currentIndex === LOADING_STAGES.length - 2) {
-      const timer = setTimeout(() => {
-        setLoadingStage(LOADING_STAGES[currentIndex + 1]);
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [currentIndex, isOpen]);
-
-  const handleClose = () => {
-    setLoadingStage(LOADING_STAGES[0]);
-    onClose();
-  };
-
-  // Manual navigation handlers
-  const handleNext = () => {
-    const validators: Record<string, string> = {
-      DETECTED_FIELDS: "validateDetectedFields",
-      MAP_FIELDS: "validateMapFields",
+    const mapHeader = (header: string) => {
+      const match = fileData.predictions.find(
+        (p) => p.originalHeader === header
+      );
+      return match ? match.suggestedHeader : header;
     };
 
-    const fnName = validators[loadingStage];
+    return fileData.rows.map((row: string[]) => {
+      const contact: Record<string, string> = {};
+      row.forEach((value, i) => {
+        contact[mapHeader(fileData.headers[i])] = value;
+      });
+      return contact;
+    });
+  };
+
+  const handleImport = async () => {
+    setIsCheckingLoading(true);
+    try {
+      const contacts = prepareContacts();
+      const summary = await importContactsBulk(DEFAULT_COMPANY_ID, contacts);
+      setImportSummary(summary);
+    } catch (err) {
+      console.error("Import failed:", err);
+    } finally {
+      setIsCheckingLoading(false);
+    }
+  };
+
+  const handleNext = async () => {
+    // Validation
+    const validators: Record<number, string> = {
+      1: "validateDetectedFields",
+      2: "validateMapFields",
+    };
+    const fnName = validators[currentStep];
     const validateFn = (window as any)[fnName];
 
     if (validateFn) {
@@ -89,9 +90,7 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
       if (!validation.isValid) {
         toast.error(
           `Missing core field mappings: ${validation.unmappedFields
-            .map(
-              (f: { label: string; value: string; core: boolean }) => f.label
-            )
+            .map((f: { label: string }) => f.label)
             .join(", ")}`,
           {
             duration: 5000,
@@ -110,21 +109,43 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
       }
     }
 
-    // Proceed only if valid and not at end
-    if (currentIndex < LOADING_STAGES.length - 1) {
-      setLoadingStage(LOADING_STAGES[currentIndex + 1]);
+    if (currentStep === 2) {
+      await handleImport();
     }
+
+    if (currentStep < 3) setCurrentStep((s) => s + 1);
   };
 
   const handlePrev = () => {
-    if (currentIndex > 0) {
-      setLoadingStage(LOADING_STAGES[currentIndex - 1]);
-    }
+    if (currentStep > 1) setCurrentStep((s) => s - 1);
+  };
+
+  const handleClose = () => {
+    setCurrentStep(1);
+    setImportSummary({ created: 0, merged: 0, skipped: 0 });
+    setIsCheckingLoading(false);
+    onClose();
+  };
+
+  const handleMoveToContacts = () => {
+    router.push("/dashboard");
+    handleClose();
   };
 
   const renderContent = () => {
-    const Component = STAGE_COMPONENTS[loadingStage];
-    return <Component />;
+    if (isParsingLoading) return <ParsingFile />;
+    if (isCheckingLoading) return <FinalChecksLoading />;
+
+    switch (currentStep) {
+      case 1:
+        return <DetectedFields />;
+      case 2:
+        return <MapFields />;
+      case 3:
+        return <FinalChecksComplete importSummary={importSummary} />;
+      default:
+        return null;
+    }
   };
 
   if (!isOpen) return null;
@@ -148,8 +169,6 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
           <button
             onClick={handleClose}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            type="button"
-            aria-label="Close modal"
           >
             <X className="w-5 h-5 text-gray-500" />
           </button>
@@ -160,7 +179,6 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
           {steps.map((step) => {
             const isCompleted = currentStep > step.number;
             const isCurrent = currentStep === step.number;
-
             return (
               <div key={step.number} className="flex items-center gap-3">
                 {isCompleted ? (
@@ -172,7 +190,7 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
                   />
                 ) : (
                   <div
-                    className={`flex items-center w-[42px] h-[42px] justify-center rounded-lg text-[20px] font-medium transition-colors ${
+                    className={`flex items-center justify-center w-[42px] h-[42px] rounded-lg text-[20px] font-medium ${
                       isCurrent
                         ? "bg-[#0E4259] text-white"
                         : "bg-[#EBF0F8] text-gray-500"
@@ -181,8 +199,7 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
                     {step.number}
                   </div>
                 )}
-
-                <div className="flex flex-col">
+                <div>
                   <p
                     className={`text-[18px] font-medium ${
                       isCurrent ? "text-[#0E4259]" : "text-[#666666]"
@@ -199,7 +216,7 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
           })}
         </div>
 
-        {/* Scrollable Content */}
+        {/* Step Content */}
         <div className="flex-1 overflow-y-auto px-8 py-6">
           {renderContent()}
         </div>
@@ -216,9 +233,9 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
           <div className="flex gap-3">
             <button
               onClick={handlePrev}
-              disabled={currentIndex === 0}
-              className={`px-5 py-2 rounded-lg border font-medium transition-colors ${
-                currentIndex === 0
+              disabled={currentStep === 1}
+              className={`px-5 py-2 rounded-lg border font-medium ${
+                currentStep === 1
                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                   : "bg-white text-gray-700 hover:bg-gray-50 border-gray-300"
               }`}
@@ -226,19 +243,19 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
               Prev
             </button>
 
-            {loadingStage === "FINAL_CHECKS_COMPLETE" ? (
+            {currentStep === 3 ? (
               <button
-                onClick={handleClose}
-                className="px-6 py-2 rounded-lg text-white font-medium transition-colors flex items-center gap-2 bg-[#0E4259] hover:bg-[#0E4259]/80"
+                onClick={handleMoveToContacts}
+                className="px-6 py-2 rounded-lg text-white font-medium flex items-center gap-2 bg-[#0E4259] hover:bg-[#0E4259]/80"
               >
                 Move to Contacts
               </button>
             ) : (
               <button
                 onClick={handleNext}
-                disabled={currentIndex === LOADING_STAGES.length - 1}
-                className={`px-6 py-2 rounded-lg text-white font-medium transition-colors ${
-                  currentIndex === LOADING_STAGES.length - 1
+                disabled={isParsingLoading || isCheckingLoading}
+                className={`px-6 py-2 rounded-lg text-white font-medium ${
+                  isParsingLoading || isCheckingLoading
                     ? "bg-gray-300 cursor-not-allowed"
                     : "bg-[#0E4259] hover:bg-[#0E4259]/80"
                 }`}

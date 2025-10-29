@@ -7,13 +7,6 @@ export type ColumnPrediction = {
   isCustom: boolean;
 };
 
-export interface User {
-  uid: string;
-  name: string;
-  email: string;
-  createdAt?: Date;
-}
-
 export interface Contact {
   id?: string; // Firestore document ID
   firstName: string;
@@ -23,7 +16,7 @@ export interface Contact {
   agentUid?: string; // Reference to User.uid
   createdOn: Date;
   // Custom fields will be added dynamically
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface ContactField {
@@ -34,23 +27,13 @@ export interface ContactField {
   createdAt?: Date;
 }
 
-// Form types for adding/editing
-export interface CreateUserForm {
+export interface User {
+  id?: string; // Firestore document ID
+  uid: string; // User unique identifier
   name: string;
   email: string;
-}
-
-export interface CreateContactForm {
-  firstName: string;
-  lastName: string;
-  phone: string;
-  email: string;
-  agentUid?: string;
-}
-
-export interface CreateContactFieldForm {
-  label: string;
-  type: ContactField["type"];
+  createdAt?: unknown; // Firestore Timestamp
+  updatedAt?: unknown; // Firestore Timestamp
 }
 
 // API response types
@@ -67,15 +50,15 @@ export interface QueryOptions {
   limit?: number;
   where?: {
     field: string;
-    operator: any; // WhereFilterOp from firebase
-    value: any;
+    operator: string; // WhereFilterOp from firebase
+    value: unknown;
   }[];
 }
 
 // Raw file parsing result (before prediction processing)
 export type ParsedFileType = {
   headers: string[];
-  rows: Record<string, any>[];
+  rows: Record<string, unknown>[];
 };
 
 // Processed file data with predictions (used in context)
@@ -84,3 +67,10 @@ export type ParsedFileData = {
   rows: string[][];
   predictions: ColumnPrediction[];
 };
+
+// Import summary type
+export interface ImportSummary {
+  created: number;
+  merged: number;
+  skipped: number;
+}

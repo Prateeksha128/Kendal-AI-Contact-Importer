@@ -1,9 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import React from "react";
+import { ImportSummary } from "@/types";
 
-export default function FinalChecksComplete() {
+
+export default function FinalChecksComplete({
+  importSummary,
+}: { importSummary: ImportSummary } & { importSummary: ImportSummary }) {
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -16,7 +19,6 @@ export default function FinalChecksComplete() {
       </div>
 
       <div className="flex flex-col gap-3 py-5">
-        {/* AI Animation / Icon */}
         <div className="flex justify-center items-center">
           <Image
             src="/icons/checkRun.svg"
@@ -26,35 +28,31 @@ export default function FinalChecksComplete() {
           />
         </div>
 
-        <div className="flex flex-col gap-2 justify-center items-center">
+        <div className="flex flex-col items-center gap-4">
           <h4 className="text-[20px] font-medium text-[#0E4259] mb-1 text-center w-[60%]">
-            No Issue Founds! This Database entres are good to move to contacts
+            No issues found! These contacts are ready to move to the contacts
             section.
           </h4>
-          <div className="flex gap-4 p-3 rounded-lg">
-            <div className="p-4 rounded-lg bg-[#F2FFED]">
-              <div className="flex flex-col items-center gap-2">
-                <p className="text-[#008D0E] text-[14px] font-medium">
-                  Total Contacts Imported
-                </p>
-                <p className="text-[#008D0E] text-[24px] font-bold">100</p>
-              </div>
+
+          {/* Summary Cards */}
+          <div className="flex gap-4 p-3 rounded-lg mt-4">
+            <div className="p-4 rounded-lg bg-[#F2FFED] flex flex-col items-center gap-2">
+              <p className="text-[#008D0E] text-[14px] font-medium">Created</p>
+              <p className="text-[#008D0E] text-[24px] font-bold">
+                {importSummary.created}
+              </p>
             </div>
-            <div className="p-4 rounded-lg bg-[#FFF7EA]">
-              <div className="flex flex-col items-center gap-2">
-                <p className="text-[#B67C0C] text-[14px] font-medium">
-                  Total Contacts Imported
-                </p>
-                <p className="text-[#B67C0C] text-[24px] font-bold">100</p>
-              </div>
+            <div className="p-4 rounded-lg bg-[#FFF7EA] flex flex-col items-center gap-2">
+              <p className="text-[#B67C0C] text-[14px] font-medium">Merged</p>
+              <p className="text-[#B67C0C] text-[24px] font-bold">
+                {importSummary.merged}
+              </p>
             </div>
-            <div className="p-4 rounded-lg bg-[#FFEDED]">
-              <div className="flex flex-col items-center gap-2">
-                <p className="text-[#C4494B] text-[14px] font-medium">
-                  Total Contacts Imported
-                </p>
-                <p className="text-[#C4494B] text-[24px] font-bold">100</p>
-              </div>
+            <div className="p-4 rounded-lg bg-[#FFEDED] flex flex-col items-center gap-2">
+              <p className="text-[#C4494B] text-[14px] font-medium">Skipped</p>
+              <p className="text-[#C4494B] text-[24px] font-bold">
+                {importSummary.skipped}
+              </p>
             </div>
           </div>
         </div>

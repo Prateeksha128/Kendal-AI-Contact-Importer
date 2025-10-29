@@ -1,6 +1,9 @@
+import { Timestamp } from "firebase/firestore";
 import { predictColumns } from "./headerPredict";
 import { mergePredictions } from "./mergePredictions";
 import { predictColumnsAI } from "./predictColumnsAI";
+import { addDocument, DEFAULT_COMPANY_ID, getDocuments } from "@/lib/firestore";
+import { ContactField } from "@/types";
 
 export async function getSmartColumnPredictions(
   headers: string[],
@@ -36,3 +39,52 @@ export const formatDate = (
     return "N/A";
   }
 };
+
+// Fetch core fields from /contactFields database
+export async function getCoreFields(): Promise<ContactField[]> {
+  try {
+    const response = await getDocuments<ContactField>("contactFields");
+    if (response.success && response.data) {
+      return response.data.filter((field) => field.core === true);
+    }
+    return [];
+  } catch (error) {
+    console.error("Error fetching core fields:", error);
+    return [];
+  }
+}
+
+export async function getAllContactFields() {
+  const res = await getDocuments("contactFields");
+  if (res.success) return res.data || [];
+  return [];
+}
+
+// Map field keys to display labels
+export function getFieldDisplayLabel(
+  fieldKey: string,
+  coreFields: ContactField[]
+): string {
+  const field = coreFields.find((f) => f.id === fieldKey);
+  return field ? field.label : fieldKey;
+}
+
+// Add a new custom contact field
+export async function createCustomContactField(
+  name: string,
+  companyId: string = DEFAULT_COMPANY_ID
+) {
+  if (!name.trim()) {
+    return { success: false, error: "Name is required" };
+  }
+
+  const newField = {
+    label: name.trim(),
+    type: "text" as const,
+    core: false,
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
+  };
+
+  return await addDocument("contactFields", newField, companyId);
+}

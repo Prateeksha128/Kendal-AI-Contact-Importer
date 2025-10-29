@@ -1,7 +1,7 @@
 "use client";
 
 import { useFileContext } from "@/contexts/FileContext";
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { Link2, Search, Target, Wrench } from "lucide-react";
 
 export default function DetectedFields() {

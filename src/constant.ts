@@ -3,7 +3,7 @@ import { ContactField } from "./types";
 export const TABS = [
   { key: "contacts", label: "Contacts" },
   { key: "import", label: "Import Contacts" },
-  { key: "agents", label: "Agents" },
+  { key: "users", label: "Agents" },
 ];
 
 // Centralized CRM Contact Field Definitions
@@ -12,6 +12,6 @@ export const CONTACT_FIELDS: ContactField[] = [
   { id: "lastName", label: "Last Name", type: "text", core: true },
   { id: "phone", label: "Phone", type: "phone", core: true },
   { id: "email", label: "Email", type: "email", core: true },
-  { id: "agent", label: "Agent", type: "text", core: true },
+  // { id: "agent", label: "Agent", type: "text", core: true },
   { id: "createdOn", label: "Created On", type: "datetime", core: true },
 ];

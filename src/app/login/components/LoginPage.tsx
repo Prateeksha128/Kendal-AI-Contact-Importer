@@ -114,6 +114,7 @@ function GoogleButton({ className = "" }: { className?: string }) {
     setIsLoading(true);
     try {
       const result = await signInWithPopup(auth, googleProvider);
+
       router.push("/dashboard");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Login failed";

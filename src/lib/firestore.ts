@@ -42,7 +42,7 @@ export async function ensureCompanyDoc(
     if (!companySnap.exists()) {
       await setDoc(companyRef, {
         id: companyId,
-        name: companyId === DEFAULT_COMPANY_ID ? "Default Company" : companyId,
+        name: companyId === DEFAULT_COMPANY_ID ? "Kendal" : companyId,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
       });

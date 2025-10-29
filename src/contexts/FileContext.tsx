@@ -2,19 +2,25 @@
 "use client";
 
 import { ParsedFileData } from "@/types";
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode } from "react";
 
 type FileContextType = {
   // File data
   fileData: ParsedFileData | null;
   setFileData: (data: ParsedFileData) => void;
   clearFileData: () => void;
+  isParsingLoading: boolean;
+  isCheckingLoading: boolean;
+  setIsParsingLoading: (isParsingLoading: boolean) => void;
+  setIsCheckingLoading: (isCheckingLoading: boolean) => void;
 };
 
 const FileContext = createContext<FileContextType | undefined>(undefined);
 
 export const FileProvider = ({ children }: { children: ReactNode }) => {
   const [fileData, setFileDataState] = useState<ParsedFileData | null>(null);
+  const [isParsingLoading, setIsParsingLoading] = useState(false);
+  const [isCheckingLoading, setIsCheckingLoading] = useState(false);
 
   const setFileData = (data: ParsedFileData) => {
     setFileDataState(data);
@@ -30,6 +36,10 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
         fileData,
         setFileData,
         clearFileData,
+        isParsingLoading,
+        isCheckingLoading,
+        setIsParsingLoading,
+        setIsCheckingLoading,
       }}
     >
       {children}
