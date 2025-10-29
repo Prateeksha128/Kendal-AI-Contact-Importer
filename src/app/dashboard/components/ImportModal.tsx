@@ -67,25 +67,67 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
     setIsCheckingLoading(true);
     try {
       const contacts = prepareContacts();
+      if (contacts.length === 0) {
+        toast.error("No contacts to import", {
+          duration: 3000,
+          style: {
+            background: "#fee2e2",
+            color: "#dc2626",
+            border: "1px solid #fecaca",
+            borderRadius: "8px",
+            padding: "16px",
+            fontSize: "14px",
+            fontWeight: "500",
+          },
+        });
+        return;
+      }
       const summary = await importContactsBulk(DEFAULT_COMPANY_ID, contacts);
       setImportSummary(summary);
     } catch (err) {
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "Failed to import contacts. Please try again.";
       console.error("Import failed:", err);
+      toast.error(errorMessage, {
+        duration: 5000,
+        style: {
+          background: "#fee2e2",
+          color: "#dc2626",
+          border: "1px solid #fecaca",
+          borderRadius: "8px",
+          padding: "16px",
+          fontSize: "14px",
+          fontWeight: "500",
+        },
+      });
     } finally {
       setIsCheckingLoading(false);
     }
   };
 
   const handleNext = async () => {
-    // Validation
-    const validators: Record<number, string> = {
+    // Validation - using typed window interface
+    type ValidationResult = {
+      isValid: boolean;
+      unmappedFields: Array<{ label: string }>;
+    };
+    type WindowWithValidation = Window & {
+      validateDetectedFields?: () => ValidationResult;
+      validateMapFields?: () => ValidationResult;
+    };
+
+    const validators: Record<number, keyof WindowWithValidation> = {
       1: "validateDetectedFields",
       2: "validateMapFields",
     };
     const fnName = validators[currentStep];
-    const validateFn = (window as any)[fnName];
+    const validateFn = fnName
+      ? (window as WindowWithValidation)[fnName]
+      : undefined;
 
-    if (validateFn) {
+    if (validateFn && typeof validateFn === "function") {
       const validation = validateFn();
       if (!validation.isValid) {
         toast.error(

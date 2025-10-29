@@ -1,7 +1,7 @@
 "use client";
 
 import { useFileContext } from "@/contexts/FileContext";
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { Link2, Search, Target, Wrench } from "lucide-react";
 
 export default function DetectedFields() {
@@ -19,6 +19,32 @@ export default function DetectedFields() {
 
   // Extract up to 5 sample rows
   const sampleRows = rows.slice(0, 5);
+
+  // Validation function for step 1 - always valid as it's just displaying detected fields
+  useEffect(() => {
+    type ValidationResult = {
+      isValid: boolean;
+      unmappedFields: Array<{ label: string }>;
+    };
+    type WindowWithValidation = Window & {
+      validateDetectedFields?: () => ValidationResult;
+    };
+
+    const validateDetectedFields = (): ValidationResult => {
+      // Step 1 always passes validation (just reviewing detected fields)
+      return {
+        isValid: true,
+        unmappedFields: [],
+      };
+    };
+
+    (window as WindowWithValidation).validateDetectedFields =
+      validateDetectedFields;
+
+    return () => {
+      delete (window as WindowWithValidation).validateDetectedFields;
+    };
+  }, []);
 
   return (
     <div className="flex flex-col gap-6">

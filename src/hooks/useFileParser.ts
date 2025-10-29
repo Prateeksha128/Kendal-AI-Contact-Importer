@@ -13,8 +13,10 @@ export function useFileParser() {
     try {
       const parsed = await parseFile(file);
       setData(parsed);
-    } catch (err: any) {
-      setError(err.message || "Failed to parse file");
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to parse file";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

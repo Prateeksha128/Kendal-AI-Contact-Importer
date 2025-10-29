@@ -6,21 +6,44 @@ import {
 } from "@/lib/firestore";
 import { auth } from "@/lib/firebase";
 
-export async function importContactsBulk(companyId: string, rows: any[]) {
+type ContactRow = Record<string, unknown>;
+type UserDoc = { email?: string; uid?: string; id?: string };
+type ContactFieldDoc = { label: string };
+type ContactDoc = {
+  id?: string;
+  phone?: string;
+  email?: string;
+  [key: string]: unknown;
+};
+type ContactData = {
+  agentUid: string | null;
+  createdOn: unknown;
+  lastUpdatedBy: string;
+  [key: string]: unknown;
+};
+
+export async function importContactsBulk(
+  companyId: string,
+  rows: ContactRow[]
+) {
   const summary = { created: 0, merged: 0, skipped: 0 };
 
   // 1️⃣ Get users
-  const usersRes = await getDocuments("users", {}, companyId);
+  const usersRes = await getDocuments<UserDoc>("users", {}, companyId);
   const userEmailToUid = new Map<string, string>();
-  (usersRes.data || []).forEach((u: any) => {
+  (usersRes.data || []).forEach((u: UserDoc) => {
     if (u.email)
       userEmailToUid.set(String(u.email).toLowerCase(), u.uid || u.id || "");
   });
 
   // 2️⃣ Get existing contactFields
-  const fieldsRes = await getDocuments("contactFields", {}, companyId);
+  const fieldsRes = await getDocuments<ContactFieldDoc>(
+    "contactFields",
+    {},
+    companyId
+  );
   const existingFieldLabels = new Set(
-    (fieldsRes.data || []).map((f: any) => f.label.toLowerCase())
+    (fieldsRes.data || []).map((f: ContactFieldDoc) => f.label.toLowerCase())
   );
 
   // 3️⃣ Add new fields if not in Firestore
@@ -39,18 +62,22 @@ export async function importContactsBulk(companyId: string, rows: any[]) {
   }
 
   // 4️⃣ Prefetch existing contacts
-  const allContactsRes = await getDocuments("contacts", {}, companyId);
-  const phoneMap = new Map<string, any>();
-  const emailMap = new Map<string, any>();
+  const allContactsRes = await getDocuments<ContactDoc>(
+    "contacts",
+    {},
+    companyId
+  );
+  const phoneMap = new Map<string, ContactDoc>();
+  const emailMap = new Map<string, ContactDoc>();
 
-  (allContactsRes.data || []).forEach((c: any) => {
+  (allContactsRes.data || []).forEach((c: ContactDoc) => {
     if (c.phone) phoneMap.set(String(c.phone).trim(), c);
     if (c.email) emailMap.set(String(c.email).trim().toLowerCase(), c);
   });
 
   // 5️⃣ Import rows
-  const creates: any[] = [];
-  const updates: any[] = [];
+  const creates: ContactRow[] = [];
+  const updates: { id: string; data: ContactDoc }[] = [];
 
   for (const row of rows) {
     const phone = row.phone ? String(row.phone).trim() : undefined;
@@ -67,7 +94,7 @@ export async function importContactsBulk(companyId: string, rows: any[]) {
       : "";
     const agentUid = agentEmail ? userEmailToUid.get(agentEmail) || null : null;
 
-    const contactData = {
+    const contactData: ContactData = {
       ...row,
       agentUid,
       createdOn: row.createdOn || Timestamp.now(),
@@ -79,19 +106,20 @@ export async function importContactsBulk(companyId: string, rows: any[]) {
 
     if (existing) {
       let changed = false;
-      const merged = { ...existing };
+      const merged: ContactDoc = { ...existing };
       for (const k of Object.keys(contactData)) {
-        const newVal = contactData[k];
+        const newVal = contactData[k as keyof ContactData];
+        const existingVal = merged[k];
         if (
           newVal &&
-          String(newVal).trim() !== String(merged[k] ?? "").trim()
+          String(newVal).trim() !== String(existingVal ?? "").trim()
         ) {
           merged[k] = newVal;
           changed = true;
         }
       }
 
-      if (changed) {
+      if (changed && existing.id) {
         updates.push({ id: existing.id, data: merged });
         summary.merged++;
       } else summary.skipped++;

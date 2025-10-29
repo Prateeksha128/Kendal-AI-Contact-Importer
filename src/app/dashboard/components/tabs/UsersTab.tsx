@@ -57,7 +57,10 @@ export default function UsersTab() {
       } else {
         // Fallback for older browsers
         uid =
-          "user_" + Math.random().toString(36).substr(2, 9) + "_" + Date.now();
+          "user_" +
+          Math.random().toString(36).substring(2, 11) +
+          "_" +
+          Date.now();
       }
 
       const response = await addDocument<User>("users", {
@@ -126,6 +129,7 @@ export default function UsersTab() {
 
   useEffect(() => {
     fetchUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

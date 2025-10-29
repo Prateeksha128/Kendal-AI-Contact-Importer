@@ -104,7 +104,11 @@ export async function getDocuments<T extends DocumentData>(
     if (options.where) {
       options.where.forEach((whereClause) => {
         constraints.push(
-          where(whereClause.field, whereClause.operator, whereClause.value)
+          where(
+            whereClause.field,
+            whereClause.operator as WhereFilterOp,
+            whereClause.value
+          )
         );
       });
     }
