@@ -212,9 +212,7 @@ export default function ContactsTable() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Agent
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Created
-                    </th>
+
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Last Updated By
                     </th>
@@ -231,18 +229,25 @@ export default function ContactsTable() {
                           key={field.id}
                           className="px-4 py-3 text-sm text-gray-900"
                         >
-                          {String(
-                            (contact as Record<string, unknown>)[field.label] ||
-                              "—"
+                          {field.label === "createdOn" ? (
+                            <span className="text-gray-900">
+                              {formatDate(contact.createdOn)}
+                            </span>
+                          ) : (
+                            <span className="text-gray-900">
+                              {String(
+                                (contact as Record<string, unknown>)[
+                                  field.label
+                                ]
+                              )}
+                            </span>
                           )}
                         </td>
                       ))}
                       <td className="px-4 py-3 text-sm text-gray-900">
                         {uidToEmail[contact.agentUid || ""] || "-----"}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
-                        {formatDate(contact.createdOn)}
-                      </td>
+
                       <td className="px-4 py-3 text-sm text-gray-900">
                         {(contact.lastUpdatedBy as string) || "-----"}
                       </td>
