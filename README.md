@@ -2,7 +2,7 @@
 
 A simple app to bulk import, map, and review contact data for a CRM.
 
-Live app: `https://kendal-ai-contact-importer.vercel.app/login`
+**Live app:** [https://kendal-ai-contact-importer.vercel.app/login](https://kendal-ai-contact-importer.vercel.app/login)
 
 ---
 
@@ -63,10 +63,10 @@ Live app: `https://kendal-ai-contact-importer.vercel.app/login`
 
 ## Tech Stack
 
-- Next.js & React (frontend)
-- Firebase (backend/storage)
-- PapaParse, xlsx (file parsing)
-- Lucide, TailwindCSS (UI)
+- [Next.js](https://nextjs.org/) & [React](https://react.dev/) (frontend)
+- [Firebase](https://firebase.google.com/) (backend/storage)
+- [PapaParse](https://www.papaparse.com/), [xlsx](https://www.npmjs.com/package/xlsx) (file parsing)
+- [Lucide](https://lucide.dev/), [TailwindCSS](https://tailwindcss.com/) (UI)
 
 ---
 
@@ -87,3 +87,4 @@ Live app: `https://kendal-ai-contact-importer.vercel.app/login`
   - `npm run start` – Start production server.
   - `npm run lint` – Check for code issues.
 
+- **Add more CRM fields:** Edit [`src/constant/index.ts`](src/constant/index.ts) (`CONTACT_FIELDS`).
