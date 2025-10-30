@@ -7,8 +7,8 @@ import ReactPaginate from "react-paginate";
 import { getDocuments } from "@/lib/firestore";
 import { Contact, User, ContactField } from "@/types";
 import { formatDate, getCoreFields, displayValue } from "@/utils/helper";
+import { useDebounce } from "@/hooks/useDebounce";
 import LoadingSpinner from "../LoadingSpinner";
-import { auth } from "@/lib/firebase";
 
 export default function ContactsTable() {
   const router = useRouter();
@@ -21,6 +21,7 @@ export default function ContactsTable() {
   const [usersLoading, setUsersLoading] = useState(true);
   const [fieldsLoading, setFieldsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
   const [isPageChanging, setIsPageChanging] = useState(false);
@@ -102,8 +103,8 @@ export default function ContactsTable() {
 
   // Filter by search
   const filteredContacts = useMemo(() => {
-    if (!searchTerm) return contacts;
-    const term = searchTerm.toLowerCase();
+    if (!debouncedSearchTerm) return contacts;
+    const term = debouncedSearchTerm.toLowerCase();
     return contacts.filter(
       (c) =>
         c.firstName?.toLowerCase().includes(term) ||
@@ -112,7 +113,7 @@ export default function ContactsTable() {
         c.email?.toLowerCase().includes(term) ||
         uidToEmail[c.agentUid || ""]?.toLowerCase().includes(term)
     );
-  }, [contacts, searchTerm, uidToEmail]);
+  }, [contacts, debouncedSearchTerm, uidToEmail]);
 
   // Pagination
   const totalPages = Math.ceil(filteredContacts.length / pageSize);

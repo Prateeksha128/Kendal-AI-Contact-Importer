@@ -1,4 +1,4 @@
-import { ContactField } from "./types";
+import { ContactField } from "@/types/index";
 
 export const TABS = [
   { key: "contacts", label: "Contacts" },

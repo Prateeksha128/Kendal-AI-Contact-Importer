@@ -1,9 +1,17 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import Upload from "./tabs/Upload";
-import ContactsTable from "./tabs/ContactsTable";
-import UsersTab from "./tabs/UsersTab";
+import dynamic from "next/dynamic";
+const Upload = dynamic(() => import("./tabs/Upload"), {
+  ssr: false,
+});
+const ContactsTable = dynamic(() => import("./tabs/ContactsTable"), {
+  ssr: false,
+  loading: () => <div className="p-4">Loading contacts...</div>,
+});
+const UsersTab = dynamic(() => import("./tabs/UsersTab"), {
+  ssr: false,
+});
 
 interface TabContentProps {
   onFileSelect: () => void;

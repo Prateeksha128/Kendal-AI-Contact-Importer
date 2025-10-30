@@ -5,7 +5,7 @@ import { Check, X, Plus, AlertCircle, Trash2 } from "lucide-react";
 import { createCustomContactField, getAllContactFields } from "@/utils/helper";
 import { ContactField } from "@/types";
 import toast from "react-hot-toast";
-import { DEFAULT_COMPANY_ID, deleteDocument } from "@/lib/firestore";
+import { deleteDocument } from "@/lib/firestore";
 
 interface ContactFieldDropdownProps {
   value?: string;

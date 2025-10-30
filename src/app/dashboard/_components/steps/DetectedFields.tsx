@@ -1,21 +1,18 @@
 "use client";
 
 import { useFileContext } from "@/contexts/FileContext";
-import { useMemo, useEffect } from "react";
+import { useEffect } from "react";
 import { Link2, Search, Target, Wrench } from "lucide-react";
 
 export default function DetectedFields() {
   const { fileData } = useFileContext();
-  const { headers = [], rows = [], predictions = [] } = fileData || {};
+  const { rows = [], predictions = [] } = fileData || {};
 
-  // Derive summary stats
-  const { total, highConfidence, customFields } = useMemo(() => {
-    const total = predictions?.length || 0;
-    const highConfidence =
-      predictions?.filter((p) => p.confidence >= 0.8).length || 0;
-    const customFields = predictions?.filter((p) => p.isCustom).length || 0;
-    return { total, highConfidence, customFields };
-  }, [predictions]);
+  // Derive summary stats (simple compute)
+  const total = predictions?.length || 0;
+  const highConfidence =
+    predictions?.filter((p) => p.confidence >= 0.8).length || 0;
+  const customFields = predictions?.filter((p) => p.isCustom).length || 0;
 
   // Extract up to 5 sample rows
   const sampleRows = rows.slice(0, 5);

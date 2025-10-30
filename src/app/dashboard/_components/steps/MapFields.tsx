@@ -100,7 +100,6 @@ export default function MapFields() {
             )
           );
           const isCoreField = field?.core;
-          console.log(p);
 
           return (
             <div
