@@ -1,5 +1,6 @@
 import Image from "next/image";
 import GoogleButton from "./GoogleButton";
+import { features } from "@/constant";
 
 // Logo Component
 function Logo({
@@ -54,29 +55,6 @@ function Logo({
 
 // Features List
 function FeatureList() {
-  const features = [
-    {
-      title: "AI-Powered Organization",
-      description:
-        "Automatically map, categorize, and deduplicate contacts for a cleaner, smarter database.",
-      gradient: "from-blue-400 to-purple-400",
-      hover: "group-hover:text-blue-200",
-    },
-    {
-      title: "Seamless Team Collaboration",
-      description: "Assign and manage contacts across your agents with ease.",
-      gradient: "from-green-400 to-blue-400",
-      hover: "group-hover:text-green-200",
-    },
-    {
-      title: "Enterprise-Grade Security",
-      description:
-        "All your contact data is safely stored with Firebase and follows industry-standard security practices.",
-      gradient: "from-purple-400 to-pink-400",
-      hover: "group-hover:text-purple-200",
-    },
-  ];
-
   return (
     <div className="space-y-6 xl:space-y-8">
       {features.map((feature, i) => (
@@ -99,7 +77,6 @@ function FeatureList() {
     </div>
   );
 }
-
 
 // Main Login Page Component
 export default function LoginPage() {

@@ -93,13 +93,17 @@ export async function importContactsBulk(
       ? String(row[agentCol]).trim().toLowerCase()
       : "";
 
-    const agentUid = agentEmail ? userEmailToUid.get(agentEmail) || null : null;
+    // Only map agentUid if the provided agentEmail resolves to a known user.
+    const resolvedAgentUid = agentEmail
+      ? userEmailToUid.get(agentEmail) || undefined
+      : undefined;
 
-    const contactData: ContactData = {
+    // Build contact data; include agentUid only when we have a valid one.
+    const contactData: Record<string, unknown> = {
       ...row,
-      agentUid,
-      createdOn: row.createdOn || Timestamp.now(),
+      createdOn: (row as Record<string, unknown>).createdOn || Timestamp.now(),
       lastUpdatedBy: auth.currentUser?.email || "",
+      ...(resolvedAgentUid ? { agentUid: resolvedAgentUid } : {}),
     };
 
     const existing =
@@ -109,14 +113,14 @@ export async function importContactsBulk(
       let changed = false;
       const merged: ContactDoc = { ...existing };
       for (const k of Object.keys(contactData)) {
-        const newVal = contactData[k as keyof ContactData];
+        const newVal = (contactData as Record<string, unknown>)[k];
         const existingVal = merged[k];
-        // Always update agentUid, even if null
+        // Update if value actually changes. agentUid will only be present when valid.
         if (
-          k === "agentUid" ||
-          (newVal && String(newVal).trim() !== String(existingVal ?? "").trim())
+          newVal !== undefined &&
+          String(newVal).trim() !== String(existingVal ?? "").trim()
         ) {
-          merged[k] = newVal;
+          (merged as Record<string, unknown>)[k] = newVal;
           changed = true;
         }
       }

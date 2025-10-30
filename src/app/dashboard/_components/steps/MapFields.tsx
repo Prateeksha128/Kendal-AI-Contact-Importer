@@ -23,17 +23,18 @@ export default function MapFields() {
   const selectedValues = mapping.map((m) => m.suggestedHeader).filter(Boolean);
   // ✅ Handle dropdown change
   const handleSelect = (index: number, field: string, isCustom: boolean) => {
-    setMapping((prev) => {
-      const updated = [...prev];
-      const target = updated[index];
-      updated[index] = {
-        ...target,
-        suggestedHeader: field === "skip" ? "" : field,
-        isCustom: isCustom,
-      };
-      return updated;
-    });
-    setFileData({ ...fileData!, predictions: mapping } as ParsedFileData);
+    // Build the updated predictions array synchronously
+    const updated = [...mapping];
+    const target = updated[index];
+    updated[index] = {
+      ...target,
+      suggestedHeader: field === "skip" ? "" : field,
+      isCustom,
+    };
+
+    // Update local state and the shared context with the same updated array
+    setMapping(updated);
+    setFileData({ ...fileData!, predictions: updated } as ParsedFileData);
     setEditableIndex(null);
   };
 
