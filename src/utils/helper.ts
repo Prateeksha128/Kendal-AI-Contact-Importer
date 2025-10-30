@@ -18,7 +18,7 @@ export async function getSmartColumnPredictions(
 export const formatDate = (
   timestamp: Date | { toDate(): Date } | string | unknown
 ) => {
-  if (!timestamp) return "N/A";
+  if (!timestamp) return "-----";
   try {
     let date: Date;
     if (
@@ -32,13 +32,21 @@ export const formatDate = (
     } else if (typeof timestamp === "string" || typeof timestamp === "number") {
       date = new Date(timestamp);
     } else {
-      return "N/A";
+      return "-----";
     }
+    if (isNaN(date.getTime())) return "-----";
     return date.toLocaleDateString();
   } catch {
-    return "N/A";
+    return "-----";
   }
 };
+
+// Display helper for null/undefined/empty
+export function displayValue(value: unknown): string {
+  if (value === null || value === undefined) return "-----";
+  if (typeof value === "string" && value.trim() === "") return "-----";
+  return String(value);
+}
 
 // Fetch core fields from /contactFields database
 export async function getCoreFields(): Promise<ContactField[]> {

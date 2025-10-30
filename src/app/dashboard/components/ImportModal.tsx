@@ -197,31 +197,31 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm z-50">
-      <div className="flex flex-col bg-white w-[1000px] h-[720px] rounded-2xl shadow-xl overflow-hidden">
+    <div className="fixed inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm z-50 p-3 sm:p-0">
+      <div className="flex flex-col bg-white w-full max-w-full sm:w-[1000px] h-[90vh] sm:h-[720px] rounded-2xl shadow-xl overflow-hidden">
         {/* Header */}
-        <div className="flex justify-between items-center px-6 py-3 border-b">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 px-4 sm:px-6 py-3 border-b">
           <div className="flex items-center gap-3">
-            <Image src="/icons/move.svg" alt="move" width={47} height={47} />
+            <Image src="/icons/move.svg" alt="move" width={40} height={40} />
             <div>
-              <h2 className="text-[18px] font-medium text-[#0C5271]">
+              <h2 className="text-[16px] sm:text-[18px] font-medium text-[#0C5271]">
                 Move Entry to Contact Section
               </h2>
-              <p className="text-[15px] text-[#89A6B2]">
+              <p className="text-[13px] sm:text-[15px] text-[#89A6B2]">
                 Step {currentStep} of 3
               </p>
             </div>
           </div>
           <button
             onClick={handleClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="self-end sm:self-auto p-2 hover:bg-gray-100 rounded-full transition-colors"
           >
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
 
         {/* Step Indicators */}
-        <div className="flex justify-between items-center px-8 py-4 border-b">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 px-4 sm:px-8 py-3 sm:py-4 border-b">
           {steps.map((step) => {
             const isCompleted = currentStep > step.number;
             const isCurrent = currentStep === step.number;
@@ -231,12 +231,12 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
                   <Image
                     src="/icons/complete.svg"
                     alt="complete"
-                    width={42}
-                    height={42}
+                    width={32}
+                    height={32}
                   />
                 ) : (
                   <div
-                    className={`flex items-center justify-center w-[42px] h-[42px] rounded-lg text-[20px] font-medium ${
+                    className={`flex items-center justify-center w-8 h-8 sm:w-[42px] sm:h-[42px] rounded-lg text-[16px] sm:text-[20px] font-medium ${
                       isCurrent
                         ? "bg-[#0E4259] text-white"
                         : "bg-[#EBF0F8] text-gray-500"
@@ -247,13 +247,13 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
                 )}
                 <div>
                   <p
-                    className={`text-[18px] font-medium ${
+                    className={`text-[14px] sm:text-[18px] font-medium ${
                       isCurrent ? "text-[#0E4259]" : "text-[#666666]"
                     }`}
                   >
                     {step.title}
                   </p>
-                  <p className="text-[15px] text-[#68818C]">
+                  <p className="text-[12px] sm:text-[15px] text-[#68818C]">
                     {step.description}
                   </p>
                 </div>
@@ -263,24 +263,24 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
         </div>
 
         {/* Step Content */}
-        <div className="flex-1 overflow-y-auto px-8 py-6">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-4 sm:py-6">
           {renderContent()}
         </div>
 
         {/* Footer */}
-        <div className="flex justify-between items-center px-6 py-4 border-t bg-gray-50">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 px-4 sm:px-6 py-3 sm:py-4 border-t bg-gray-50">
           <button
             onClick={handleClose}
-            className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+            className="w-full sm:w-auto px-4 py-2 rounded-lg border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 transition-colors"
           >
             Cancel
           </button>
 
-          <div className="flex gap-3">
+          <div className="flex gap-3 w-full sm:w-auto">
             <button
               onClick={handlePrev}
               disabled={currentStep === 1}
-              className={`px-5 py-2 rounded-lg border font-medium ${
+              className={`flex-1 sm:flex-none px-5 py-2 rounded-lg border font-medium ${
                 currentStep === 1
                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                   : "bg-white text-gray-700 hover:bg-gray-50 border-gray-300"
@@ -292,7 +292,7 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
             {currentStep === 3 ? (
               <button
                 onClick={handleMoveToContacts}
-                className="px-6 py-2 rounded-lg text-white font-medium flex items-center gap-2 bg-[#0E4259] hover:bg-[#0E4259]/80"
+                className="flex-1 sm:flex-none px-6 py-2 rounded-lg text-white font-medium flex items-center justify-center gap-2 bg-[#0E4259] hover:bg-[#0E4259]/80"
               >
                 Move to Contacts
               </button>
@@ -300,7 +300,7 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
               <button
                 onClick={handleNext}
                 disabled={isParsingLoading || isCheckingLoading}
-                className={`px-6 py-2 rounded-lg text-white font-medium ${
+                className={`flex-1 sm:flex-none px-6 py-2 rounded-lg text-white font-medium ${
                   isParsingLoading || isCheckingLoading
                     ? "bg-gray-300 cursor-not-allowed"
                     : "bg-[#0E4259] hover:bg-[#0E4259]/80"

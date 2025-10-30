@@ -79,17 +79,17 @@ export default function MapFields() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4 sm:gap-6">
       <header>
-        <h3 className="text-[18px] font-semibold text-[#0E4259]">
+        <h3 className="text-[16px] sm:text-[18px] font-semibold text-[#0E4259]">
           Smart Field Mapping
         </h3>
-        <p className="text-[#68818C] text-[16px]">
+        <p className="text-[#68818C] text-[14px] sm:text-[16px]">
           Review and adjust AI-powered field mappings below.
         </p>
       </header>
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3 sm:gap-4">
         {mapping.map((p, index) => {
           const conf = Math.min(Math.round(p.confidence * 100), 100);
           const badgeColor = getBadgeColor(conf);
@@ -105,54 +105,56 @@ export default function MapFields() {
           return (
             <div
               key={index}
-              className={`p-4 flex flex-col gap-2 rounded-xl border bg-white transition-colors ${
+              className={`p-3 sm:p-4 flex flex-col gap-2 rounded-xl border bg-white transition-colors ${
                 p.isCustom ? "border-[#FFD3D3]" : "border-gray-200"
               }`}
             >
               {/* Top labels */}
-              <div className="flex justify-between mb-2">
+              <div className="flex flex-col sm:flex-row sm:justify-between mb-2 gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs px-2 py-1 rounded-md border font-medium bg-[#FBEBFF] text-[#920C7A] border-[#FFB7F4]">
+                  <span className="text-[10px] sm:text-xs px-2 py-1 rounded-md border font-medium bg-[#FBEBFF] text-[#920C7A] border-[#FFB7F4]">
                     DATABASE FIELD
                   </span>
                   <span
-                    className={`text-xs px-2 py-1 rounded-md border ${badgeColor}`}
+                    className={`text-[10px] sm:text-xs px-2 py-1 rounded-md border ${badgeColor}`}
                   >
                     {conf}% •{" "}
                     {conf >= 80 ? "High" : conf < 30 ? "Low" : "Medium"}
                   </span>
                 </div>
-                <span className="text-xs px-2 py-1 rounded-md font-medium bg-[#E7F5FB] border border-[#AACCFF] text-[#0959D1]">
+                <span className="text-[10px] sm:text-xs px-2 py-1 rounded-md font-medium bg-[#E7F5FB] border border-[#AACCFF] text-[#0959D1]">
                   CRM FIELD
                 </span>
               </div>
 
               {/* Field mapping section */}
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-                <div>
-                  <p className="text-[#0E4259] text-[20px] font-semibold">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 w-full">
+                <div className="min-w-0">
+                  <p className="text-[#0E4259] text-[18px] sm:text-[20px] font-semibold truncate">
                     {p.originalHeader}
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3 mt-3 md:mt-0">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 mt-2 md:mt-0 w-full md:w-auto">
                   <Link2 className="text-[#1970F3]" />
                   {editableIndex === index ? (
-                    <ContactFieldDropdown
-                      value={p.suggestedHeader}
-                      onSelect={(val: string, isCustom: boolean) =>
-                        handleSelect(index, val, isCustom)
-                      }
-                      disabledCoreField={isCoreField}
-                      selectedValues={selectedValues}
-                    />
+                    <div className="w-full sm:w-auto">
+                      <ContactFieldDropdown
+                        value={p.suggestedHeader}
+                        onSelect={(val: string, isCustom: boolean) =>
+                          handleSelect(index, val, isCustom)
+                        }
+                        disabledCoreField={isCoreField}
+                        selectedValues={selectedValues}
+                      />
+                    </div>
                   ) : (
-                    <p className="text-[20px] font-medium text-[#0056D2]">
+                    <p className="text-[16px] sm:text-[20px] font-medium text-[#0056D2] truncate">
                       {p.suggestedHeader || "—"}
                     </p>
                   )}
                   <button
-                    className="ml-2 text-gray-500 hover:text-black"
+                    className="sm:ml-2 text-gray-500 hover:text-black self-start sm:self-auto"
                     onClick={() =>
                       setEditableIndex(editableIndex === index ? null : index)
                     }
@@ -162,8 +164,8 @@ export default function MapFields() {
                 </div>
               </div>
 
-              <div className="flex justify-between">
-                <div className="flex flex-wrap gap-1 mt-1 max-w-[700px]">
+              <div className="flex flex-col sm:flex-row sm:justify-between gap-2">
+                <div className="flex flex-wrap gap-1 mt-1 sm:max-w-[700px]">
                   {samples.map((row, i) => {
                     const val = String(row[index] || "");
                     return (
@@ -191,7 +193,7 @@ export default function MapFields() {
               </div>
 
               {(p.isCustom || conf < 50) && (
-                <div className="mt-4 flex items-center justify-center gap-1 text-[12px] text-[#D74141] font-medium bg-[#FFF2EF] px-2 py-1 rounded-md">
+                <div className="mt-2 sm:mt-4 flex items-center justify-center gap-1 text-[11px] sm:text-[12px] text-[#D74141] font-medium bg-[#FFF2EF] px-2 py-1 rounded-md">
                   <AlertCircle className="w-3 h-3" />
                   Manual Review Recommended
                 </div>

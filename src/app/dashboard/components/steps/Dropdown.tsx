@@ -113,7 +113,7 @@ export default function ContactFieldDropdown({
   const crmFields = fields.filter((f) => !f.core);
 
   return (
-    <div className="relative inline-block w-72">
+    <div className="relative inline-block w-full sm:w-72">
       {/* Selected value */}
       <button
         onClick={() => setOpen(!open)}

@@ -6,7 +6,7 @@ import { Search, Download } from "lucide-react";
 import ReactPaginate from "react-paginate";
 import { getDocuments } from "@/lib/firestore";
 import { Contact, User, ContactField } from "@/types";
-import { formatDate, getCoreFields } from "@/utils/helper";
+import { formatDate, getCoreFields, displayValue } from "@/utils/helper";
 import LoadingSpinner from "../LoadingSpinner";
 import { auth } from "@/lib/firebase";
 
@@ -235,7 +235,7 @@ export default function ContactsTable() {
                             </span>
                           ) : (
                             <span className="text-gray-900">
-                              {String(
+                              {displayValue(
                                 (contact as Record<string, unknown>)[
                                   field.label
                                 ]
@@ -245,11 +245,11 @@ export default function ContactsTable() {
                         </td>
                       ))}
                       <td className="px-4 py-3 text-sm text-gray-900">
-                        {uidToEmail[contact.agentUid || ""] || "-----"}
+                        {displayValue(uidToEmail[contact.agentUid || ""])}
                       </td>
 
                       <td className="px-4 py-3 text-sm text-gray-900">
-                        {(contact.lastUpdatedBy as string) || "-----"}
+                        {displayValue(contact.lastUpdatedBy as string)}
                       </td>
                     </tr>
                   ))}
