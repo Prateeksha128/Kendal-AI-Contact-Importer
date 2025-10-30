@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Contact Importer
 
-## Getting Started
+A simple app to bulk import, map, and review contact data for a CRM.
 
-First, run the development server:
+Live app: `https://kendal-ai-contact-importer.vercel.app/login`
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## What Does It Do?
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Lets you import spreadsheets (.csv, .xlsx) of contacts.
+- Automatically matches your file’s columns to CRM fields.
+- Lets you adjust the mappings (fix mistakes, add custom fields).
+- Checks for duplicates or missing info.
+- Imports all valid contacts and gives you a summary of what was added, merged, or skipped.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## How to Use
 
-To learn more about Next.js, take a look at the following resources:
+1. **Start the app:**
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+   ```bash
+   npm install
+   npm run dev
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   Go to [http://localhost:3000](http://localhost:3000).
 
-## Deploy on Vercel
+2. **Go to the dashboard’s Import section.**
+3. **Upload your contact file** (CSV or Excel).
+4. **Step 1: Detected Fields**
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   - See which columns were found and matched.
+   - Review a sample of the detected data.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+5. **Step 2: Map Fields**
+
+   - Double-check the suggested CRM field for each column from your file.
+   - Change the mapping or add custom fields if needed.
+   - Must map all required fields: First Name, Last Name, Email, Phone.
+
+6. **Step 3: Final Checks**
+
+   - See warnings for any problems (duplicates, missing info).
+   - Confirm to import.
+   - Get a summary: how many contacts were created, merged (updated), or skipped.
+
+7. **Done!**
+   - Your contacts are now available in the Contacts tab.
+   - You can search, view, and manage them there.
+
+---
+
+## Features
+
+- **Smart Field Mapping:** Suggests the best match between your file’s columns and CRM fields, accounts for common variations, and highlights anything that needs attention.
+- **Custom Fields:** You can map columns to existing fields or create new custom ones.
+- **Duplicate Handling:** Existing contacts (by email/phone) are updated instead of duplicated.
+- **User Assignment:** If your data has an agent/owner column, those contacts are linked automatically.
+
+---
+
+## Tech Stack
+
+- Next.js & React (frontend)
+- Firebase (backend/storage)
+- PapaParse, xlsx (file parsing)
+- Lucide, TailwindCSS (UI)
+
+---
+
+## Tips
+
+- Use clean column headers in your spreadsheet for best results.
+- Required columns: First Name, Last Name, Email, Phone.
+- Can handle both CSV and Excel files.
+
+---
+
+## For Developers
+
+- **Scripts:**
+
+  - `npm run dev` – Start dev server.
+  - `npm run build` – Build for production.
+  - `npm run start` – Start production server.
+  - `npm run lint` – Check for code issues.
+
