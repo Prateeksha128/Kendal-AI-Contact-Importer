@@ -6,7 +6,7 @@ export const TABS = [
   { key: "users", label: "Agents" },
 ];
 
-// Centralized CRM Contact Field Definitions
+// Centralized CRM for validation and mapping
 export const CONTACT_FIELDS: ContactField[] = [
   { id: "firstName", label: "First Name", type: "text", core: true },
   { id: "lastName", label: "Last Name", type: "text", core: true },

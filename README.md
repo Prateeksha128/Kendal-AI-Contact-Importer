@@ -86,5 +86,3 @@ A simple app to bulk import, map, and review contact data for a CRM.
   - `npm run build` – Build for production.
   - `npm run start` – Start production server.
   - `npm run lint` – Check for code issues.
-
-- **Add more CRM fields:** Edit [`src/constant/index.ts`](src/constant/index.ts) (`CONTACT_FIELDS`).
