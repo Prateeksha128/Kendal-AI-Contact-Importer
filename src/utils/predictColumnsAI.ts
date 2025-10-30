@@ -59,7 +59,7 @@ Only return valid JSON, no explanations.
     console.warn("AI mapping failed, fallback to default:", err);
     return headers.map((h) => ({
       originalHeader: h,
-      suggestedHeader: `custom_${h}`,
+      suggestedHeader: `${h}`,
       confidence: 0,
       isCustom: true,
     }));

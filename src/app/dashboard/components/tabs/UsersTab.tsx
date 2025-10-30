@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { getDocuments, addDocument } from "@/lib/firestore";
 import { User } from "@/types";
 import LoadingSpinner from "../LoadingSpinner";
+import { toast } from "react-hot-toast";
 
 export default function UsersTab() {
   const [users, setUsers] = useState<User[]>([]);
@@ -49,6 +50,15 @@ export default function UsersTab() {
   }, [error]);
 
   const handleUserAdded = async (userData: { name: string; email: string }) => {
+    // Duplicate check
+    const newEmail = userData.email.trim().toLowerCase();
+    const alreadyExists = users.some(
+      (u) => u.email.trim().toLowerCase() === newEmail
+    );
+    if (alreadyExists) {
+      toast.error("A user with this email already exists.");
+      return;
+    }
     try {
       // Generate UID with fallback
       let uid: string;
@@ -62,13 +72,11 @@ export default function UsersTab() {
           "_" +
           Date.now();
       }
-
       const response = await addDocument<User>("users", {
         uid,
         name: userData.name,
         email: userData.email,
       });
-
       if (response.success && response.data) {
         setUsers((prev) => [...prev, response.data!]);
         setMessage({ type: "success", text: "Agent added successfully!" });
@@ -169,7 +177,7 @@ export default function UsersTab() {
               name="name"
               value={formData.name}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 text-[#0E4259]  border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter full name"
               required
             />
@@ -188,7 +196,7 @@ export default function UsersTab() {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border text-[#0E4259]  border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter email address"
               required
             />

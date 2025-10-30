@@ -87,7 +87,7 @@ export function predictColumns(
 
     return {
       originalHeader: header,
-      suggestedHeader: isCustom ? `custom_${normalized}` : bestMatch,
+      suggestedHeader: isCustom ? `${normalized}` : bestMatch,
       confidence: +bestScore.toFixed(2),
       isCustom,
     };

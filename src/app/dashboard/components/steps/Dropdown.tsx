@@ -1,20 +1,24 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check, X, Plus, AlertCircle } from "lucide-react";
+import { Check, X, Plus, AlertCircle, Trash2 } from "lucide-react";
 import { createCustomContactField, getAllContactFields } from "@/utils/helper";
 import { ContactField } from "@/types";
+import toast from "react-hot-toast";
+import { DEFAULT_COMPANY_ID, deleteDocument } from "@/lib/firestore";
 
 interface ContactFieldDropdownProps {
   value?: string;
-  onSelect: (fieldId: string | "custom" | "skip") => void;
+  onSelect: (fieldId: string, isCustom: boolean) => void;
   disabledCoreField?: boolean;
+  selectedValues?: string[];
 }
 
 export default function ContactFieldDropdown({
   value,
   onSelect,
   disabledCoreField = false,
+  selectedValues = [],
 }: ContactFieldDropdownProps) {
   const [fields, setFields] = useState<ContactField[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,18 +43,29 @@ export default function ContactFieldDropdown({
     fetchFields();
   }, []);
 
-  const handleSelect = (fieldId: string) => {
+  const handleSelect = (fieldId: string, isCustom: boolean) => {
     if (fieldId === "skip" && disabledCoreField) {
-      setError("❌ Core fields cannot be skipped");
+      setError("Core fields cannot be skipped");
+      setOpen(false);
       return;
     }
-    onSelect(fieldId);
+    onSelect(fieldId, isCustom);
     setError("");
     setOpen(false);
   };
 
   const handleCreateCustomField = async () => {
     if (!newFieldName.trim()) return;
+
+    // Prevent duplicate key/label
+    const isDuplicate = fields.some(
+      (f) => f.label.trim().toLowerCase() === newFieldName.trim().toLowerCase()
+    );
+    if (isDuplicate) {
+      setOpen(false);
+      setError("A field with that name already exists.");
+      return;
+    }
     try {
       setError("");
       setCreating(true);
@@ -65,9 +80,9 @@ export default function ContactFieldDropdown({
         };
 
         setFields((prev) => [...prev, newField]);
-        onSelect(res.data.label);
-        setOpen(false);
+        onSelect(res.data.label as string, true);
         setNewFieldName("");
+        setOpen(false);
       } else {
         setError(res.error || "Failed to create field");
       }
@@ -76,6 +91,21 @@ export default function ContactFieldDropdown({
       setError("Something went wrong while creating field");
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleDeleteContactField = async (fieldId: string) => {
+    try {
+      const res = await deleteDocument("contactFields", fieldId);
+      if (res.success) {
+        setFields((prev) => prev.filter((f) => f.id !== fieldId));
+        toast.success("Field deleted successfully");
+      } else {
+        toast.error(res.error || "Failed to delete field");
+      }
+    } catch (err) {
+      console.error("Error deleting field:", err);
+      toast.error("Something went wrong while deleting field");
     }
   };
 
@@ -108,7 +138,7 @@ export default function ContactFieldDropdown({
             <>
               {/* Don't import option */}
               <div
-                onClick={() => handleSelect("skip")}
+                onClick={() => handleSelect("skip", false)}
                 className="px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer flex items-center justify-between"
               >
                 <span>🚫 Don&apos;t import this field</span>
@@ -127,7 +157,7 @@ export default function ContactFieldDropdown({
                   Create Custom Field
                 </div>
               ) : (
-                <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
+                <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center gap-2 text-[#0E4259] ">
                   <input
                     type="text"
                     placeholder="Custom field name"
@@ -156,20 +186,36 @@ export default function ContactFieldDropdown({
                   <div className="px-4 py-2 bg-blue-100 text-xs font-semibold text-gray-500 uppercase">
                     Core Fields
                   </div>
-                  {coreFields.map((f) => (
-                    <div
-                      key={f.id}
-                      onClick={() => handleSelect(f.label)}
-                      className={`px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700 flex items-center justify-between ${
-                        value === f.id ? "bg-blue-50" : ""
-                      }`}
-                    >
-                      <span>{f.label}</span>
-                      {value === f.id && (
-                        <Check className="w-4 h-4 text-green-600" />
-                      )}
-                    </div>
-                  ))}
+                  {coreFields.map((f) => {
+                    const isTaken =
+                      selectedValues?.includes(f.label) && value !== f.label;
+                    return (
+                      <div
+                        key={f.id}
+                        onClick={() => {
+                          if (!isTaken) handleSelect(f.label, false);
+                        }}
+                        className={`px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700 flex items-center justify-between ${
+                          value === f.label ? "bg-blue-50" : ""
+                        } ${isTaken ? "opacity-60 cursor-not-allowed" : ""}`}
+                        style={isTaken ? { pointerEvents: "none" } : {}}
+                      >
+                        <span
+                          className={`flex items-center gap-2 text-[16px] font-medium ${
+                            value === f.label
+                              ? "text-green-600"
+                              : "text-gray-700"
+                          }`}
+                        >
+                          {f.label}
+                          {value === f.label && (
+                            <Check className="w-4 h-4 text-green-600" />
+                          )}
+                        </span>
+                        <Trash2 className="w-4 h-4 text-gray-200 cursor-not-allowed" />
+                      </div>
+                    );
+                  })}
                 </>
               )}
 
@@ -179,20 +225,36 @@ export default function ContactFieldDropdown({
                   <div className="px-4 py-2 bg-blue-100 text-xs font-semibold text-gray-500 uppercase">
                     CRM Fields
                   </div>
-                  {crmFields.map((f) => (
-                    <div
-                      key={f.id}
-                      onClick={() => handleSelect(f.label)}
-                      className={`px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center justify-between text-gray-700 ${
-                        value === f.id ? "bg-blue-50" : ""
-                      }`}
-                    >
-                      <span>{f.label}</span>
-                      {value === f.id && (
-                        <Check className="w-4 h-4 text-green-600" />
-                      )}
-                    </div>
-                  ))}
+                  {crmFields.map((f) => {
+                    const isTaken =
+                      selectedValues?.includes(f.label) && value !== f.label;
+                    return (
+                      <div
+                        key={f.id}
+                        onClick={() => {
+                          if (!isTaken) handleSelect(f.label, true);
+                        }}
+                        className={`px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center justify-between text-gray-700 ${
+                          value === f.label ? "bg-blue-50" : ""
+                        } ${isTaken ? "opacity-60 cursor-not-allowed" : ""}`}
+                        style={isTaken ? { pointerEvents: "none" } : {}}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span>{f.label}</span>
+                          {value === f.label && (
+                            <Check className="w-4 h-4 text-green-600" />
+                          )}
+                        </div>
+                        <Trash2
+                          className="w-4 h-4 text-[#D74141]"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteContactField(f.id);
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
                 </>
               )}
             </>

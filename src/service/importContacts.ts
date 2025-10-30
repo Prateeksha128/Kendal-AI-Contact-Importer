@@ -92,6 +92,7 @@ export async function importContactsBulk(
     const agentEmail = agentCol
       ? String(row[agentCol]).trim().toLowerCase()
       : "";
+
     const agentUid = agentEmail ? userEmailToUid.get(agentEmail) || null : null;
 
     const contactData: ContactData = {
@@ -110,15 +111,15 @@ export async function importContactsBulk(
       for (const k of Object.keys(contactData)) {
         const newVal = contactData[k as keyof ContactData];
         const existingVal = merged[k];
+        // Always update agentUid, even if null
         if (
-          newVal &&
-          String(newVal).trim() !== String(existingVal ?? "").trim()
+          k === "agentUid" ||
+          (newVal && String(newVal).trim() !== String(existingVal ?? "").trim())
         ) {
           merged[k] = newVal;
           changed = true;
         }
       }
-
       if (changed && existing.id) {
         updates.push({ id: existing.id, data: merged });
         summary.merged++;

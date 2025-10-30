@@ -57,7 +57,11 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
     return fileData.rows.map((row: string[]) => {
       const contact: Record<string, string> = {};
       row.forEach((value, i) => {
-        contact[mapHeader(fileData.headers[i])] = value;
+        const mappedHeader = mapHeader(fileData.headers[i]);
+        // 🚫 Skip columns where user chose "Don't import this field"
+        if (!mappedHeader || mappedHeader.trim() === "") return;
+
+        contact[mappedHeader] = value;
       });
       return contact;
     });

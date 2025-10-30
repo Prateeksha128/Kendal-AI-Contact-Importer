@@ -14,14 +14,13 @@ import {
   QueryConstraint,
   DocumentData,
   CollectionReference,
-  DocumentReference,
   Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { FirestoreResponse, QueryOptions } from "@/types";
 
 // Configuration
-const DEFAULT_COMPANY_ID = "kendal";
+export const DEFAULT_COMPANY_ID = "kendal";
 
 // Generic collection reference helper
 export function getCollectionRef(
@@ -42,7 +41,7 @@ export async function ensureCompanyDoc(
     if (!companySnap.exists()) {
       await setDoc(companyRef, {
         id: companyId,
-        name: companyId === DEFAULT_COMPANY_ID ? "Kendal" : companyId,
+        name: companyId === DEFAULT_COMPANY_ID ? DEFAULT_COMPANY_ID : companyId,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
       });
@@ -263,5 +262,4 @@ export async function batchAddDocuments<T extends DocumentData>(
   }
 }
 
-// Export default company ID for convenience
-export { DEFAULT_COMPANY_ID };
+

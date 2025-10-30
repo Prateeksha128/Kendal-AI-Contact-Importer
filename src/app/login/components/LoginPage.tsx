@@ -5,6 +5,7 @@ import Image from "next/image";
 import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
+import { toast } from "react-hot-toast";
 
 // Logo Component
 function Logo({
@@ -114,11 +115,16 @@ function GoogleButton({ className = "" }: { className?: string }) {
     setIsLoading(true);
     try {
       const result = await signInWithPopup(auth, googleProvider);
-
-      router.push("/dashboard");
+      if (result.user) {
+        router.push("/dashboard");
+      } else {
+        toast.error("Login failed");
+        router.push("/login");
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Login failed";
-      alert(message);
+      toast.error(message);
+      router.push("/login");
     } finally {
       setIsLoading(false);
     }
