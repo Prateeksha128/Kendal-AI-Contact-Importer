@@ -106,7 +106,7 @@ export async function importContactsBulk(
       ...row,
       createdOn: (row as Record<string, unknown>).createdOn || Timestamp.now(),
       lastUpdatedBy: auth.currentUser?.email || "",
-      ...(resolvedAgentUid ? { agentUid: resolvedAgentUid } : {}),
+      agentUid: resolvedAgentUid ?? null,
     };
 
     const existing =
