@@ -101,6 +101,15 @@ export default function ContactsTable() {
     return map;
   }, [users]);
 
+  // Map email → uid for mapping agentEmail to agent
+  const emailToUid = useMemo(() => {
+    const map: Record<string, string> = {};
+    users.forEach((user) => {
+      if (user.email && user.uid) map[user.email.toLowerCase()] = user.uid;
+    });
+    return map;
+  }, [users]);
+
   // Filter by search
   const filteredContacts = useMemo(() => {
     if (!debouncedSearchTerm) return contacts;
@@ -246,7 +255,26 @@ export default function ContactsTable() {
                         </td>
                       ))}
                       <td className="px-4 py-3 text-sm text-gray-900">
-                        {displayValue(uidToEmail[contact.agentUid || ""])}
+                        {(() => {
+                          // If agentUid exists, use it
+                          if (contact.agentUid) {
+                            return displayValue(
+                              uidToEmail[contact.agentUid || "-----"]
+                            );
+                          }
+                          // Otherwise, check if agentEmail field exists and map to user
+                          const agentEmail = (
+                            contact as Record<string, unknown>
+                          )["agentEmail"];
+                          if (agentEmail) {
+                            const agentEmailStr = String(agentEmail);
+                            const uid = emailToUid[agentEmailStr.toLowerCase()];
+                            if (uid) {
+                              return displayValue(uidToEmail[uid] || "------");
+                            }
+                          }
+                          return "------";
+                        })()}
                       </td>
 
                       <td className="px-4 py-3 text-sm text-gray-900">
