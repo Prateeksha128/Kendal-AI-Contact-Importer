@@ -6,12 +6,25 @@ import { useFileContext } from "@/contexts/FileContext";
 import { CONTACT_FIELDS } from "@/constant";
 import ContactFieldDropdown from "./Dropdown";
 import { ParsedFileData } from "@/types";
+import { getAllContactFields } from "@/utils/helper";
+import { ContactField } from "@/types";
 
 export default function MapFields() {
   const { fileData, setFileData } = useFileContext();
   const { predictions = [], rows = [] } = fileData || {};
 
   const samples = rows.slice(0, 5);
+  const [allFields, setAllFields] = useState<ContactField[]>([]);
+
+  // Fetch all fields from database
+  useEffect(() => {
+    const fetchFields = async () => {
+      const fields = await getAllContactFields();
+      setAllFields(fields as ContactField[]);
+    };
+    fetchFields();
+  }, []);
+
   const predefinedFields = CONTACT_FIELDS.map((f) => ({
     label: f.label,
     value: f.id,
@@ -95,18 +108,17 @@ export default function MapFields() {
           const conf = Math.min(Math.round(p.confidence * 100), 100);
           const badgeColor = getBadgeColor(conf);
 
-          const field = predefinedFields.find((f) =>
-            [f.label, f.value].some(
-              (key) => key?.toLowerCase() === p.suggestedHeader?.toLowerCase()
-            )
+          const field = allFields.find(
+            (f) => f.label?.toLowerCase() === p.suggestedHeader?.toLowerCase()
           );
-          const isCoreField = field?.core;
+          const isCoreField = field?.core ?? false;
+          const isSystemField = isCoreField;
 
           return (
             <div
               key={index}
               className={`p-3 sm:p-4 flex flex-col gap-2 rounded-xl border bg-white transition-colors ${
-                p.isCustom ? "border-[#FFD3D3]" : "border-gray-200"
+                isSystemField ? "border-gray-200" : "border-[#FFD3D3]"
               }`}
             >
               {/* Top labels */}
@@ -182,17 +194,17 @@ export default function MapFields() {
                   <span
                     className={`text-xs font-medium px-2.5 py-1 rounded-full border
                         ${
-                          p.isCustom
-                            ? "bg-red-50 text-[#D74141]  border-red-200"
-                            : "bg-green-50 text-green-700 border-green-200"
+                          isSystemField
+                            ? "bg-green-50 text-green-700 border-green-200"
+                            : "bg-red-50 text-[#D74141]  border-red-200"
                         }`}
                   >
-                    {!p.isCustom ? "System Field" : "Custom Field"}
+                    {isSystemField ? "System Field" : "Custom Field"}
                   </span>
                 </div>
               </div>
 
-              {(p.isCustom || conf < 50) && (
+              {(!isSystemField || conf < 50) && (
                 <div className="mt-2 sm:mt-4 flex items-center justify-center gap-1 text-[11px] sm:text-[12px] text-[#D74141] font-medium bg-[#FFF2EF] px-2 py-1 rounded-md">
                   <AlertCircle className="w-3 h-3" />
                   Manual Review Recommended

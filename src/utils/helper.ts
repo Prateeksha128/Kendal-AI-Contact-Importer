@@ -9,7 +9,7 @@ export async function getSmartColumnPredictions(
   headers: string[],
   rows: string[][]
 ) {
-  const systemPred = predictColumns(headers, rows);
+  const systemPred = await predictColumns(headers, rows);
   const aiPred = await predictColumnsAI(headers, rows);
   const final = mergePredictions(systemPred, aiPred);
   return final;
