@@ -54,17 +54,26 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
       return match ? match.suggestedHeader : header;
     };
 
-    return fileData.rows.map((row: string[]) => {
-      const contact: Record<string, string> = {};
-      row.forEach((value, i) => {
-        const mappedHeader = mapHeader(fileData.headers[i]);
-        // 🚫 Skip columns where user chose "Don't import this field"
-        if (!mappedHeader || mappedHeader.trim() === "") return;
+    return fileData.rows
+      .map((row: string[]) => {
+        const contact: Record<string, string> = {};
+        let hasContent = false;
 
-        contact[mappedHeader] = value;
-      });
-      return contact;
-    });
+        row.forEach((value, i) => {
+          const mappedHeader = mapHeader(fileData.headers[i]);
+          // 🚫 Skip columns where user chose "Don't import this field"
+          if (!mappedHeader || mappedHeader.trim() === "") return;
+
+          if (value.trim() !== "") {
+            hasContent = true;
+          }
+
+          contact[mappedHeader] = value;
+        });
+
+        return hasContent ? contact : null;
+      })
+      .filter((contact): contact is Record<string, string> => contact !== null);
   };
 
   const handleImport = async () => {
