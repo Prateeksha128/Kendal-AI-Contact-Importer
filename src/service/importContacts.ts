@@ -15,12 +15,6 @@ type ContactDoc = {
   email?: string;
   [key: string]: unknown;
 };
-type ContactData = {
-  agentUid: string | null;
-  createdOn: unknown;
-  lastUpdatedBy: string;
-  [key: string]: unknown;
-};
 
 export async function importContactsBulk(
   companyId: string,
@@ -78,12 +72,21 @@ export async function importContactsBulk(
   // 5️⃣ Import rows
   const creates: ContactRow[] = [];
   const updates: { id: string; data: ContactDoc }[] = [];
+  const processedInBatch = new Set<string>();
 
   for (const row of rows) {
     const phone = row.phone ? String(row.phone).trim() : undefined;
     const email = row.email
       ? String(row.email).trim().toLowerCase()
       : undefined;
+
+    // Skip duplicate rows in this batch
+    const batchKey = phone || email || JSON.stringify(row);
+    if (processedInBatch.has(batchKey)) {
+      summary.skipped++;
+      continue;
+    }
+    processedInBatch.add(batchKey);
 
     // detect agent email column
     const agentCol = Object.keys(row).find((k) =>
